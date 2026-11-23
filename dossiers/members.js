@@ -2,13 +2,21 @@
 // portrait, optional profile (second angle), and photos[].src relative to index.html.
 window.fregatDossiers = [
   {
-    id: "echo", name: "Эхо", code: "FS—001", reward: 85000,
-    demo: true, role: "Музыка", portrait: "",
-    description: "Появляется вместе с первым басом.\nЗнает, кто пропустил вступление. Даже если это был он сам.\nХарактер ровный. Громкость — по настроению.",
+    id: "echo", name: "Расулджон Бабиджонович", posterName: "Рассол", code: "FS—001", reward: 85000,
+    portrait: "dossiers/rasul/kitchen.png",
+    stamp: "Особо опасен",
+    notes: [
+      { title: "Особые приметы", lines: ["Передвигается на «эрдоганах». Не переносит запах алкоголя, любит свинину."] },
+      { title: "Известные клички", lines: ["Рассол, Грязнулька, Посудомойка, Уборщица, Кегля."] },
+      { title: "Рекомендации по общению", lines: ["Говорить спокойно, не спорить. Если пойдёт за ножом, сразу прекратить разговор."] },
+      { title: "Статьи внутреннего кодекса", lines: [
+        "§ 1. Не разделяет любовь к Steersman.",
+        "§ 2. После заката получает бафф «Невидимость».",
+        "§ 3. Смотрит аниме."
+      ] }
+    ],
     photos: [
-      { src: "media/fregat-cafe.jpg", caption: "Кафе «Фрегат»" },
-      { src: "media/pitabaik1.gif", caption: "Питбайк на закате" },
-      { src: "media/logo.jpg", caption: "Знак сквада" }
+      { src: "dossiers/rasul/kitchen.png", caption: "Расулджон Бабиджонович" }
     ]
   },
   {

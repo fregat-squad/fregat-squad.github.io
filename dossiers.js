@@ -93,7 +93,7 @@
     texture.setAttribute("aria-hidden", "true");
     texture.append(element("i"), element("i"), element("i"));
     const frame = element("span", "pasted-photo");
-    frame.append(picture(portraitsFor(member)[0].src, "", ""), element("span", "poster-name", member.reserved ? member.code : member.name));
+    frame.append(picture(portraitsFor(member)[0].src, "", ""), element("span", "poster-name", member.posterName || (member.reserved ? member.code : member.name)));
     a.append(texture, frame, element("span", "poster-reward", "$" + amount.format(member.reward)));
     a.addEventListener("click", event => {
       if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
@@ -146,6 +146,7 @@
       fields.append(element("dt", "", label), element("dd", "", value));
     }
     text.append(fields);
+    if (member.stamp) text.append(element("b", "file-alert-stamp", member.stamp));
     const shots = portraitsFor(member);
     const portrait = element("button", "file-photo");
     portrait.type = "button";
@@ -153,12 +154,16 @@
     portrait.append(picture(shots[0].src, shots[0].caption, ""));
     portrait.addEventListener("click", () => openViewer(shots, 0, portrait));
     identity.append(text, portrait);
-    const story = element("section", "file-notes");
-    story.append(element("h3", "", "Об участнике"));
     const description = member.description || (member.chief
       ? "Место главы сквада. Портрет и история появятся здесь позже."
       : "Портрет и описание этого участника скоро появятся.");
-    for (const line of description.split("\n").filter(Boolean)) story.append(element("p", "", line));
+    const notes = member.notes || [{ title: "Об участнике", lines: description.split("\n").filter(Boolean) }];
+    const sections = notes.map(note => {
+      const section = element("section", "file-notes");
+      section.append(element("h3", "", note.title));
+      for (const line of note.lines) section.append(element("p", "", line));
+      return section;
+    });
     const album = element("section", "file-album");
     const photos = member.photos || [];
     album.append(element("h3", "", "Фотоальбом"));
@@ -176,7 +181,7 @@
     } else album.append(element("p", "", "Снимки ещё не добавлены."));
     const foot = element("footer", "document-foot");
     foot.append(element("small", "", member.demo ? "Демонстрационный профиль" : member.reserved ? "Портрет ожидается" : member.code), element("b", "squad-stamp", "FREGAT SQUAD"));
-    paper.append(heading, identity, story, album, foot);
+    paper.append(heading, identity, ...sections, album, foot);
   }
 
   function leaveFile() {
