@@ -108,12 +108,16 @@ const status = document.querySelector("#player-status");
 const seek = document.querySelector("#seek");
 const elapsed = document.querySelector("#elapsed");
 const duration = document.querySelector("#duration");
+const soundCloudHost = document.querySelector("#soundcloud-host");
 let waitingForClick = false;
 let playRequest = 0;
 let currentTrack = 0;
 let openPanel = null;
+let cloudPlayer = null;
+const cloudState = { playing: false, position: 0, duration: 0 };
 function updateMusicVolume() {
   audio.volume = Number(volume.value) / 100;
+  cloudPlayer?.setVolume(Number(volume.value));
 }
 
 updateMusicVolume();
@@ -293,19 +297,43 @@ async function playTrack() {
 }
 
 function changeTrack(index) {
+  cloudPlayer?.close();
+  cloudPlayer = null;
+  soundCloudHost.hidden = true;
   tracks[currentTrack].removeAttribute("aria-current");
   currentTrack = (index + tracks.length) % tracks.length;
   const selected = tracks[currentTrack];
   selected.setAttribute("aria-current", "true");
   trackTitle.textContent = selected.textContent;
   loadSpectrum();
-  audio.src = "media/music/" + selected.dataset.file;
+  if (selected.dataset.soundcloud) {
+    playRequest++;
+    waitingForClick = false;
+    audio.pause();
+    stopEqualizer();
+    Object.assign(cloudState, { playing: false, position: 0, duration: 0 });
+    status.textContent = "Загрузка SoundCloud";
+    soundCloudHost.hidden = false;
+    cloudPlayer = window.openSoundCloudTrack(soundCloudHost, selected.dataset.soundcloud, {
+      volume: Number(volume.value),
+      playing: () => cloudState.playing,
+      play() { cloudState.playing = true; status.textContent = ""; updatePlaying(); },
+      pause() { cloudState.playing = false; updatePlaying(); },
+      finish() { changeTrack(currentTrack + 1); },
+      position(seconds) { cloudState.position = seconds; updateTimeline(); },
+      duration(seconds) { cloudState.duration = seconds; updateTimeline(); },
+      error() { cloudState.playing = false; status.textContent = "SoundCloud недоступен"; updatePlaying(); }
+    });
+  } else {
+    audio.src = "media/music/" + selected.dataset.file;
+    playTrack();
+  }
   updateTimeline();
-  playTrack();
+  updatePlaying();
 }
 
 function updatePlaying() {
-  const playing = !audio.paused && !audio.ended;
+  const playing = cloudPlayer ? cloudState.playing : !audio.paused && !audio.ended;
   playButton.toggleAttribute("data-playing", playing);
   playButton.setAttribute("aria-label", playing ? "Пауза" : "Воспроизвести");
 }
@@ -316,16 +344,20 @@ function formatTime(value) {
 }
 
 function updateTimeline() {
-  const canSeek = Number.isFinite(audio.duration) && audio.duration > 0;
+  const length = cloudPlayer ? cloudState.duration : audio.duration;
+  const position = cloudPlayer ? cloudState.position : audio.currentTime;
+  const canSeek = Number.isFinite(length) && length > 0;
   seek.disabled = !canSeek;
-  seek.value = canSeek ? audio.currentTime / audio.duration * 1000 : 0;
+  seek.value = canSeek ? position / length * 1000 : 0;
   seek.style.setProperty("--position", Number(seek.value) / 10 + "%");
-  elapsed.textContent = formatTime(audio.currentTime);
-  duration.textContent = formatTime(audio.duration);
+  elapsed.textContent = formatTime(position);
+  duration.textContent = formatTime(length);
 }
 
 playButton.addEventListener("click", () => {
-  if (audio.paused) playTrack();
+  if (cloudPlayer?.failed) changeTrack(currentTrack);
+  else if (cloudPlayer) cloudPlayer.toggle();
+  else if (audio.paused) playTrack();
   else {
     playRequest++;
     waitingForClick = false;
@@ -338,20 +370,26 @@ tracks.forEach((track, index) => {
   track.addEventListener("click", () => {
     closePanel(true);
     if (index !== currentTrack) changeTrack(index);
-    else if (audio.paused) playTrack();
+    else if (cloudPlayer?.failed) changeTrack(index);
+    else if (cloudPlayer && !cloudState.playing) cloudPlayer.toggle();
+    else if (!cloudPlayer && audio.paused) playTrack();
   });
 });
-audio.addEventListener("ended", () => changeTrack(currentTrack + 1));
+audio.addEventListener("ended", () => { if (!cloudPlayer) changeTrack(currentTrack + 1); });
 audio.addEventListener("play", () => {
+  if (cloudPlayer) return;
   waitingForClick = false;
   status.textContent = "";
   updatePlaying();
 });
 audio.addEventListener("pause", updatePlaying);
-audio.addEventListener("error", () => { status.textContent = "Трек недоступен"; });
+audio.addEventListener("error", () => { if (!cloudPlayer) status.textContent = "Трек недоступен"; });
 ["timeupdate", "durationchange", "emptied"].forEach(event => audio.addEventListener(event, updateTimeline));
 seek.addEventListener("input", () => {
-  if (!seek.disabled) audio.currentTime = Number(seek.value) / 1000 * audio.duration;
+  if (seek.disabled) return;
+  const fraction = Number(seek.value) / 1000;
+  if (cloudPlayer) cloudPlayer.seek(fraction * cloudState.duration);
+  else audio.currentTime = fraction * audio.duration;
 });
 document.addEventListener("click", event => {
   if (waitingForClick && !event.target.closest(".player, a")) playTrack();
