@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="flappy.css?v=leaderboards">
   <link rel="stylesheet" href="jump.css">
   <link rel="stylesheet" href="durak.css?v=arcade-glass">
+  <link rel="stylesheet" href="bento.css">
+  <link rel="stylesheet" href="dossiers.css">
   <script src="spectra.js" defer></script>
   <script src="soundcloud-player.js" defer></script>
   <script src="site.js?v=equalizer-wave" defer></script>
@@ -18,18 +20,23 @@
   <script src="flappy.js?v=leaderboards" defer></script>
   <script src="jump.js?v=leaderboards" defer></script>
   <script src="durak.js" defer></script>
+  <script src="vendor/gsap.min.js" defer></script>
+  <script src="bento.js" defer></script>
+  <script src="dossiers/members.js" defer></script>
+  <script src="dossiers.js" defer></script>
 </head>
 <body data-leaderboard-url="https://fregat-squad-multiplayer.netlify.app/.netlify/functions/leaderboard">
   <canvas class="dot-wave" aria-hidden="true"></canvas>
   <div class="dot-light" aria-hidden="true"></div>
   <div class="shell">
     <header class="masthead">
-      <a class="arcade-home" href="#home" hidden><img src="media/logo.jpg" alt="" width="29" height="29">FREGAT SQUAD</a>
+      <a class="arcade-home" href="#home" aria-label="FREGAT SQUAD — главная"><img src="media/logo.jpg" alt="" width="38" height="38"><span>FREGAT SQUAD</span></a>
       <nav class="game-nav" aria-label="Игры FREGAT SQUAD">
         <a href="#flappy">Flappy Steersman</a>
         <a href="#leha-jump">Leha Jump</a>
         <a href="#fregat-online">FREGAT ONLINE</a>
       </nav>
+      <a class="archive-link" href="#dossiers"><i aria-hidden="true"></i>Досье</a>
       <a class="city" href="https://yandex.ru/maps/org/fregat/206045547952/?ll=50.057565%2C58.547679&amp;z=14" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 10-8 10S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
         Кирово-Чепецк
@@ -38,7 +45,8 @@
     <main>
       <div class="hero">
         <section class="intro" aria-labelledby="title">
-          <img class="squad-logo" src="media/logo.jpg" width="148" height="148" alt="Логотип FREGAT SQUAD">
+          <img class="venue-photo" src="media/fregat-cafe.jpg" alt="">
+          <span class="venue-tag"><i aria-hidden="true"></i> Кирово-Чепецк</span>
           <h1 id="title"><span>FREGAT</span><span>SQUAD</span></h1>
           <nav class="socials" aria-label="Ссылки сквада">
             <a href="https://discord.gg/5tpP6APnrq" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M19.8 5.4a18 18 0 0 0-4.5-1.4l-.6 1.2a17 17 0 0 0-5.4 0L8.7 4a18 18 0 0 0-4.5 1.4C1.4 9.5.6 13.5 1 17.4a18 18 0 0 0 5.5 2.7l1.2-1.9-1.8-.9.4-.3a13.6 13.6 0 0 0 11.4 0l.4.3-1.8.9 1.2 1.9a18 18 0 0 0 5.5-2.7c.5-4.5-.8-8.5-3.2-12Zm-11 9.5c-1 0-1.7-.9-1.7-1.9 0-1.1.7-1.9 1.7-1.9s1.8.8 1.8 1.9c0 1-.8 1.9-1.8 1.9Zm6.4 0c-1 0-1.8-.9-1.8-1.9 0-1.1.8-1.9 1.8-1.9s1.7.8 1.7 1.9c0 1-.7 1.9-1.7 1.9Z"/></svg>Discord</a>
@@ -100,6 +108,9 @@
       <section class="flight jump" id="jump" data-game-view="leha-jump" data-game-title="Leha Jump" tabindex="0" aria-label="Игровое поле Leha Jump" aria-describedby="jump-help" hidden>
         <img class="flight-photo" src="media/fregat-cafe.jpg" alt="" loading="lazy">
         <canvas id="jump-canvas" aria-hidden="true"></canvas>
+        <div class="jump-stick" id="jump-stick" aria-hidden="true" hidden>
+          <span class="jump-stick-knob"></span>
+        </div>
         <div class="flight-hud">
           <div class="flight-meters">
             <div>Очки <output id="jump-score">0</output></div>
@@ -121,7 +132,7 @@
               </div>
             </form>
             <button class="flight-action" id="jump-action" type="button">Начать подъём</button>
-            <p class="flight-help" id="jump-help">Удерживай <kbd>←</kbd> <kbd>→</kbd> или край поля.</p>
+            <p class="flight-help" id="jump-help"><span class="jump-help-keys">Удерживай <kbd>←</kbd> <kbd>→</kbd> или край поля.</span><span class="jump-help-touch">Двигай джойстик влево и вправо.</span></p>
           </div>
           <details class="flight-leaders" id="jump-leaders">
             <summary>Таблица лидеров</summary>
@@ -143,18 +154,18 @@
           <div class="durak-lobby">
             <h1><span>FREGAT</span><span>ONLINE</span></h1>
             <p class="durak-game-type">Подкидной дурак · 1 на 1</p>
-          <p class="durak-demo-note" id="durak-notice" role="status"></p>
+            <p class="durak-demo-note" id="durak-notice" role="status"></p>
 
             <form class="durak-panel" id="durak-lobby">
               <label for="durak-nickname">Твой ник</label>
-              <input id="durak-nickname" name="nickname" maxlength="20" autocomplete="nickname" placeholder="Введите никнейм" required>
-              <button class="durak-button" type="submit">Найти игру</button>
+              <input id="durak-nickname" name="nickname" maxlength="20" autocomplete="nickname" placeholder="Никнейм за столом" required>
+              <button class="durak-button" type="submit">Найти соперника <span aria-hidden="true">→</span></button>
             </form>
 
             <div class="durak-panel" id="durak-search" hidden>
-              <h2>Поиск соперника</h2>
-            <p>Ждём второго игрока. Он может зайти на сайт со своего устройства и нажать «Найти игру».</p>
-              <button class="durak-button durak-secondary" id="durak-cancel-search" type="button">Отмена</button>
+              <h2>Ищем соперника…</h2>
+              <p>Когда за стол сядет второй игрок, раздадим по шесть карт.</p>
+              <button class="durak-button durak-secondary" id="durak-cancel-search" type="button">Отменить поиск</button>
             </div>
 
             <div class="durak-panel" id="durak-match" hidden>
@@ -165,6 +176,14 @@
           </div>
 
           <section class="durak-table" id="durak-table" aria-label="Карточный стол">
+            <div class="durak-cover">
+              <div class="durak-fan" aria-hidden="true">
+                <img src="media/durak/hearts-A.png" alt="">
+                <img src="media/durak/clubs-K.png" alt="">
+                <img src="media/durak/diamonds-Q.png" alt="">
+              </div>
+              <p>Колода Фрегата <span>36 карт</span></p>
+            </div>
             <div class="durak-opponent-zone">
               <div class="durak-person"><b aria-hidden="true">С</b><span id="durak-opponent">Соперник</span></div>
               <div class="durak-opponent-hand" id="durak-opponent-hand" aria-hidden="true"></div>
@@ -178,7 +197,7 @@
               <div class="durak-hand-info"><strong id="durak-player-name">Твои карты</strong></div>
               <div class="durak-hand" id="durak-hand" aria-label="Твоя рука"></div>
               <div class="durak-table-actions" id="durak-table-actions" hidden>
-                <button class="durak-button durak-secondary" id="durak-take" type="button">Взять</button>
+                <button class="durak-button durak-secondary" id="durak-take" type="button">Взять карты</button>
                 <button class="durak-button" id="durak-done" type="button">Бито</button>
               </div>
               <p id="durak-table-status" role="status">Найди соперника, чтобы начать матч.</p>
@@ -186,13 +205,31 @@
           </section>
         </div>
       </section>
+      <section class="dossiers" data-game-view="dossiers" data-game-title="Досье Фрегата" aria-label="Досье Фрегата" hidden>
+        <div id="dossier-desk"></div>
+        <dialog id="member-file" aria-labelledby="member-file-name">
+          <article class="file-paper" id="member-file-paper"></article>
+        </dialog>
+        <dialog id="dossier-viewer" aria-labelledby="viewer-caption">
+          <div class="viewer-frame">
+            <button class="viewer-close" type="button" aria-label="Закрыть просмотр">×</button>
+            <img class="viewer-image" alt="">
+            <div class="viewer-controls">
+              <button type="button" data-step="-1" aria-label="Предыдущий снимок">←</button>
+              <div><strong id="viewer-caption"></strong><small id="viewer-position"></small></div>
+              <button type="button" data-step="1" aria-label="Следующий снимок">→</button>
+            </div>
+          </div>
+        </dialog>
+      </section>
       <section class="player" aria-label="Музыка FREGAT SQUAD">
         <audio id="audio" src="media/music/00_pampam.mp3" preload="metadata"></audio>
         <div class="track">
-          <img class="track-logo" src="media/logo.jpg" width="48" height="48" alt="">
+          <span class="record"><img class="track-logo" src="media/logo.jpg" width="30" height="30" alt=""></span>
           <div class="track-copy">
             <button class="track-toggle" id="track-toggle" type="button" aria-label="Выбрать трек" aria-describedby="track-title" aria-expanded="false" aria-controls="playlist">
               <span class="track-labels">
+                <span class="radio-name">Fregat FM</span>
                 <span id="player-status" aria-live="polite"></span>
                 <strong id="track-title">пампАмпАм</strong>
               </span>
@@ -228,11 +265,34 @@
           </button>
           <div class="player-panel sound-panel" id="sound-panel" inert>
             <label for="volume">Громкость</label>
-            <output id="volume-value" for="volume">16%</output>
-            <input id="volume" type="range" min="0" max="100" value="16">
+            <output id="volume-value" for="volume">8%</output>
+            <input id="volume" type="range" min="0" max="100" value="8">
           </div>
         </div>
         <div class="soundcloud-host" id="soundcloud-host" hidden></div>
+      </section>
+      <section class="home-games" aria-labelledby="games-title">
+        <h2 id="games-title">Аркада<span aria-hidden="true">↘</span></h2>
+        <div class="game-tiles">
+          <a class="game-tile game-flight" href="#flappy">
+            <span class="game-kind">Полёт</span>
+            <strong>Flappy<br>Steersman</strong>
+            <span class="game-art flight-art" aria-hidden="true"><img src="media/steersman.png" alt=""></span>
+            <span class="tile-arrow" aria-hidden="true">↗</span>
+          </a>
+          <a class="game-tile game-jump" href="#leha-jump">
+            <span class="game-kind">Платформер</span>
+            <strong>Leha<br>Jump</strong>
+            <img class="game-art jump-art" src="media/leha.png" alt="">
+            <span class="tile-arrow" aria-hidden="true">↗</span>
+          </a>
+          <a class="game-tile game-online" href="#fregat-online">
+            <span class="game-kind">Дурак · 1 на 1</span>
+            <strong>Fregat<br>Online</strong>
+            <span class="game-art hand-art" aria-hidden="true"><img src="media/durak/hearts-A.png" alt=""><img src="media/durak/spades-K.png" alt=""></span>
+            <span class="tile-arrow" aria-hidden="true">↗</span>
+          </a>
+        </div>
       </section>
     </main>
     <footer class="site-credit">

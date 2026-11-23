@@ -19,6 +19,7 @@
   const rankFiles = ["06", "07", "08", "09", "10", "J", "Q", "K", "A"];
   const suitFiles = ["spades", "hearts", "diamonds", "clubs"];
   const suits = ["♠", "♥", "♦", "♣"];
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let state = { phase: "lobby" };
   let signature = "";
   let busy = false;
@@ -42,6 +43,7 @@
     const type = button ? "button" : "div";
     const element = document.createElement(type);
     element.className = "durak-card";
+    element.dataset.card = card;
     const img = document.createElement("img");
     const suit = Math.floor(card / 9);
     const rank = card % 9;
@@ -60,34 +62,34 @@
     return element;
   }
 
-  function render(force = false) {
-    const nextSignature = JSON.stringify(state);
-    if (!force && signature === nextSignature) return;
-    signature = nextSignature;
-    const playing = state.phase === "match";
-    lobby.hidden = state.phase !== "lobby";
-    search.hidden = state.phase !== "search";
-    match.hidden = !playing;
-    get("table-actions").hidden = !playing;
-    get("deck").hidden = !playing;
-    hand.replaceChildren();
-    center.replaceChildren();
-    get("opponent-hand").replaceChildren();
-    get("opponent").textContent = "Соперник";
-    get("player-name").textContent = "Твои карты";
-    if (!playing) {
-      get("table-status").textContent = state.phase === "search" ? "Идёт поиск соперника." : "Найди соперника, чтобы начать матч.";
-      return;
-    }
+  function animateCard(node, dx, dy, delay = 0) {
+    if (view.hidden || reducedMotion.matches) return;
+    node.animate([
+      { translate: dx + "px " + dy + "px", rotate: "-6deg", opacity: .35 },
+      { translate: "0 0", rotate: "0deg", opacity: 1 }
+    ], { duration: 320, delay, easing: "cubic-bezier(.18,.75,.24,1)", fill: "backwards" });
+  }
 
-    get("opponent").textContent = state.opponent + " · " + state.opponentCards;
-    get("opponent-hand").replaceChildren(...Array.from({ length: Math.min(10, state.opponentCards) }, () => document.createElement("span")));
-    get("player-name").textContent = state.name + (state.role === "attack" ? " · атакующий" : " · защищающийся");
-    get("deck-count").textContent = state.deckCount;
-    get("trump").textContent = suits[Math.floor(state.trump / 9)];
-    get("trump").classList.toggle("durak-red", [1, 2].includes(Math.floor(state.trump / 9)));
+  function updateCards() {
+    const previousHand = new Map(Array.from(hand.children, el => [Number(el.dataset.card), el]));
+    const previousTable = new Set(Array.from(center.querySelectorAll("[data-card]"), el => Number(el.dataset.card)));
     const allowed = new Set(state.legal.moves.map(move => move.card));
-    hand.replaceChildren(...state.hand.map(card => picture(card, allowed.has(card), true)));
+    const origins = new Map();
+    for (const [id, node] of previousHand) {
+      if (!state.hand.includes(id)) {
+        origins.set(id, node.getBoundingClientRect());
+        node.remove();
+      }
+    }
+    state.hand.forEach((id, index) => {
+      const existing = previousHand.get(id);
+      if (existing) existing.disabled = !allowed.has(id);
+      else {
+        const node = picture(id, allowed.has(id), true);
+        hand.insertBefore(node, hand.children[index] || null);
+        animateCard(node, 15, 25, previousHand.size ? 0 : Math.min(index, 6) * 35);
+      }
+    });
     center.replaceChildren(...state.table.map(({ attack, defense }) => {
       const pair = document.createElement("div");
       pair.className = "durak-pair";
@@ -95,19 +97,57 @@
       if (defense !== null) pair.append(picture(defense));
       return pair;
     }));
+    for (const node of center.querySelectorAll("[data-card]")) {
+      const id = Number(node.dataset.card);
+      if (previousTable.has(id)) continue;
+      const from = origins.get(id);
+      const to = node.getBoundingClientRect();
+      animateCard(node, from ? from.left - to.left : 0, from ? from.top - to.top : -60);
+    }
+  }
+
+  function render(force = false) {
+    const nextSignature = JSON.stringify(state);
+    if (!force && signature === nextSignature) return;
+    signature = nextSignature;
+    const playing = state.phase === "match";
+    view.dataset.phase = state.phase;
+    lobby.hidden = state.phase !== "lobby";
+    search.hidden = state.phase !== "search";
+    match.hidden = !playing;
+    get("table-actions").hidden = !playing;
+    get("deck").hidden = !playing;
+    get("opponent-hand").replaceChildren();
+    get("opponent").textContent = "Соперник";
+    get("player-name").textContent = "Твои карты";
+    if (!playing) {
+      hand.replaceChildren();
+      center.replaceChildren();
+      return;
+    }
+
+    get("opponent").textContent = state.opponent + " · карт: " + state.opponentCards;
+    view.querySelector(".durak-person b").textContent = Array.from(state.opponent)[0]?.toUpperCase() || "С";
+    get("opponent-hand").replaceChildren(...Array.from({ length: Math.min(10, state.opponentCards) }, () => document.createElement("span")));
+    get("player-name").textContent = "Твои карты · " + state.hand.length;
+    get("deck-count").textContent = state.deckCount;
+    get("trump").textContent = suits[Math.floor(state.trump / 9)];
+    get("trump").classList.toggle("durak-red", [1, 2].includes(Math.floor(state.trump / 9)));
+    updateCards();
     take.hidden = !state.legal.take;
     done.hidden = !state.legal.done;
     leave.hidden = Boolean(state.result);
     retry.hidden = !state.result;
 
     const result = state.result?.outcome;
-    get("match-title").textContent = result === "win" ? "Победа" : result === "loss" ? "Поражение" : result === "draw" ? "Ничья" : "Матч 1 на 1";
+    view.toggleAttribute("data-your-turn", state.yourTurn);
+    get("match-title").textContent = result === "win" ? "Ты выиграл!" : result === "loss" ? "Ты проиграл" : result === "draw" ? "Ничья" : state.yourTurn ? "Твой ход" : "Ход соперника";
     get("table-status").textContent = result
-      ? { leave: "Матч завершён сдачей.", disconnect: "Соперник потерял связь.", complete: "Партия окончена." }[state.result.reason]
+      ? { leave: result === "win" ? "Соперник сдался." : "Ты сдался.", disconnect: "Соперник потерял связь.", complete: "Партия окончена." }[state.result.reason]
       : state.opponentAway ? "Ждём возвращения соперника."
-      : !state.yourTurn ? "Ход соперника."
-      : state.role === "defend" ? "Отбей карту или возьми карты со стола."
-      : state.table.length ? "Подкинь карту того же номинала или нажми «Бито»." : "Твой ход. Выбери карту для атаки.";
+      : !state.yourTurn ? (state.role === "attack" ? "Соперник отбивается." : "Соперник выбирает ход.")
+      : state.role === "defend" ? (state.legal.moves.length ? "Отбей картой старше той же масти или козырем." : "Отбиться нечем. Нажми «Взять карты».")
+      : state.table.length ? (state.legal.moves.length ? "Подкинь карту того же достоинства или нажми «Бито»." : "Всё отбито. Нажми «Бито».") : "Выбери любую карту для атаки.";
   }
 
   async function request(action, extra = {}) {

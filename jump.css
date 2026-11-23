@@ -3,6 +3,32 @@
   margin-inline: auto;
 }
 #jump-canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.jump-stick, .jump-help-touch { display: none; }
+@media (any-pointer: coarse) {
+  .jump-help-keys { display: none; }
+  .jump-help-touch { display: inline; }
+  .jump-stick:not([hidden]) {
+    position: absolute; z-index: 2; left: 14px; bottom: max(14px,env(safe-area-inset-bottom));
+    width: 126px; height: 56px; display: grid; place-items: center;
+    touch-action: none; user-select: none; -webkit-user-select: none;
+    border: 1px solid #e8fffb94; border-radius: 40px;
+    background: linear-gradient(160deg,#324a46c9,#122321c9);
+    box-shadow: inset 0 1px 2px #edfff850,0 3px 9px #111e1e52;
+  }
+  .jump-stick::before, .jump-stick::after {
+    content: ""; position: absolute; width: 8px; height: 8px;
+    border: solid #def3ebcb; border-width: 0 0 2px 2px;
+  }
+  .jump-stick::before { left: 14px; rotate: 45deg; }
+  .jump-stick::after { right: 14px; rotate: 225deg; }
+  .jump-stick-knob {
+    position: relative; z-index: 1; width: 40px; height: 40px; border-radius: 50%;
+    border: 1px solid #eefdfa; background: radial-gradient(circle at 35% 25%,#effbf6,#b5cfc7 70%);
+    box-shadow: 0 2px 5px #09171482; transform: translateX(var(--stick-x,0px));
+    transition: transform .12s ease-out; pointer-events: none;
+  }
+  .jump-stick[data-held] .jump-stick-knob { transition: none; background: #96e9d8; }
+}
 .jump .flight-overlay { padding: clamp(12px, 3vw, 22px); background: linear-gradient(transparent 30%, #d7dfe9a1); }
 .jump .flight-panel { background: linear-gradient(145deg, #fbfdffd9, #e9eef6c9); }
 .jump-panel h1 { font-size: clamp(37px, 18cqi, 58px); }

@@ -1,0 +1,274 @@
+:root {
+  --paper: #edf0ef;
+  --panel: #fafaf7;
+  --coal: #20211f;
+  --signal: #66d8c9;
+  --signal-ink: #12665e;
+  --edge: #cccdc5;
+  --tile-radius: 22px;
+  --glass-depth: inset 0 1px 0 #fff7, 0 2px 5px #2223;
+  --equalizer-height: clamp(44px, 7vh, 70px);
+  background: var(--paper);
+}
+body, body.arcade { background: var(--paper); color: var(--coal); }
+.dot-wave { opacity: .82; }
+.shell, .arcade .shell { width: min(1370px, 93%); min-width: 0; }
+.masthead { min-height: 72px; border: 0; gap: 20px; }
+.arcade-home { display: flex; gap: 10px; font: 900 17px/1 Arial, sans-serif; letter-spacing: -.075em; }
+.arcade-home img { width: 36px; height: 36px; border: 1px solid var(--edge); border-radius: 9px; box-shadow: none; }
+.game-nav { gap: 4px; }
+.game-nav a, .city { background: none; border: 0; box-shadow: none; backdrop-filter: none; }
+.game-nav a { min-height: 36px; padding-inline: 13px; font-size: 13px; }
+.game-nav a:hover, .game-nav a[aria-current="page"] { background: var(--coal); color: white; }
+.city { gap: 7px; font-size: 12px; font-weight: 650; }
+.arcade .city { display: inline-flex; }
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 12px;
+  padding: 0;
+}
+.intro, .gallery { position: relative; min-width: 0; min-height: clamp(320px, 28vw, 420px); border-radius: var(--tile-radius); overflow: hidden; }
+.intro {
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: clamp(22px, 2.5vw, 42px);
+  background: #222524;
+  color: #fff;
+}
+.venue-photo, .intro::before { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.venue-photo { z-index: -2; object-fit: cover; object-position: 72% 61%; filter: saturate(.68); }
+.intro::before {
+  content: ""; z-index: -1;
+  background: linear-gradient(90deg, #111511df, #1115118a 47%, transparent 92%), linear-gradient(0deg, #151812b8, transparent 64%);
+}
+.venue-tag, .radio-name, .game-kind { font: 700 11px/1.15 Consolas, monospace; letter-spacing: .095em; text-transform: uppercase; }
+.venue-tag { display: inline-flex; align-items: center; gap: 7px; margin-bottom: auto; padding: 5px 0 15px; }
+.venue-tag i { width: 7px; height: 7px; border-radius: 50%; background: var(--signal); }
+.intro h1 { margin: 0; color: #fff; font: 950 clamp(72px, 7.3vw, 118px)/.79 "Arial Black", Arial, sans-serif; letter-spacing: -.086em; text-shadow: none; }
+.intro h1 span + span { background: none; filter: none; color: inherit; }
+.intro .socials { margin-top: clamp(10px, 2dvh, 18px); }
+.socials { gap: 6px; }
+.socials a { min-height: 33px; padding: 5px 10px; gap: 5px; border: 1px solid #fffa; border-radius: 8px; background: #17191765; color: white; font-size: 12px; box-shadow: none; backdrop-filter: blur(5px); }
+.socials a:hover { background: #fff; color: var(--coal); box-shadow: none; }
+.socials svg { width: 15px; height: 15px; }
+.gallery {
+  --card-width: clamp(160px, 14vw, 210px);
+  display: grid; align-content: center; justify-items: center; padding: 48px 20px 30px;
+  border: 1px solid #cbcdc5; box-shadow: none; backdrop-filter: none;
+  background: linear-gradient(135deg, #fafcf8dc, #d7e0d899);
+}
+.gallery::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(#43574f25 .7px, transparent .85px); background-size: 6px 6px;
+  mask-image: linear-gradient(130deg, transparent 10%, #000 70%);
+}
+.home-games h2 { margin: 0; font-size: clamp(23px, 2.1vw, 34px); line-height: 1; letter-spacing: -.065em; }
+.deck { aspect-ratio: 4 / 5.15; }
+.card { border: 0; border-radius: 14px; padding: 0; background: #2c3533; box-shadow: 0 5px 14px #172c2740; }
+.card img { border-radius: inherit; }
+
+.player, .arcade .player { margin: 12px 0 0; padding: 13px 22px; border-radius: var(--tile-radius); }
+.player { color: #f2fff9; }
+.player::before {
+  background:
+    radial-gradient(ellipse at 15% -70%, #acefe359, transparent 63%),
+    repeating-radial-gradient(ellipse at 0 180%, transparent 0 13px, #b8ece50b 14px, transparent 15px 20px),
+    linear-gradient(110deg, #163a35ed, #233735f5 52%, #162827f5);
+  border: 1px solid #365851; box-shadow: inset 0 1px #e6fff98c, inset 0 -1px #071a17a6, 0 3px 10px #16382f26;
+  backdrop-filter: blur(8px);
+}
+.track { gap: 10px; }
+.record {
+  display: grid; place-items: center; flex: 0 0 auto; width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(125deg, transparent 28%, #ffffff30 47%, transparent 64%), repeating-radial-gradient(circle, #252522 0 2px, #454542 2px 3px);
+}
+.record img { width: 24px; height: 24px; border: 2px solid var(--signal); border-radius: 50%; box-shadow: none; }
+.track-labels { gap: 3px; }
+.radio-name { color: #9de4d8; font-size: 10px; }
+.track-labels strong { font-size: 18px; line-height: 1.08; }
+.controls button, #sound-toggle { color: #e0f4ed; background: transparent; border: 0; box-shadow: none; }
+.controls #play, .controls #play:hover { background: var(--signal); color: #12372e; width: 44px; height: 44px; box-shadow: inset 0 1px #fff9, 0 2px 9px #06141170; }
+.player .track-toggle:hover, .controls button:hover, #sound-toggle:hover, #sound-toggle[aria-expanded="true"] { background-color: #d3faf019; }
+.player .track-toggle svg, .player .timeline { color: #cae3da; }
+.player :focus-visible { outline-color: #8af4df; }
+.player-panel { color: var(--coal); background: #fbfbf8; border: 1px solid var(--edge); border-radius: 15px; box-shadow: 0 10px 30px #2223; }
+.playlist button[aria-current] { background: #e7e8df; box-shadow: none; }
+.timeline input, .sound-panel input { --range-rail: linear-gradient(90deg, var(--coal) var(--position,0%), #dedfd8 var(--position,0%)); }
+.player .timeline input { --range-rail: linear-gradient(90deg, #80dacb var(--position,0%), #607671 var(--position,0%)); }
+.timeline input::-webkit-slider-thumb, .sound-panel input::-webkit-slider-thumb { width: 15px; height: 15px; margin-top: -4.5px; background: var(--signal); border: 1px solid var(--signal-ink); box-shadow: none; }
+
+.home-games { margin-top: 22px; }
+.home-games h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 11px 3px; }
+.home-games h2 span { font: 400 .78em/1 Arial, sans-serif; }
+.game-tiles { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+.game-tile { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; min-height: clamp(155px, 13.5vw, 210px); padding: 20px 22px; border-radius: var(--tile-radius); }
+.game-kind { z-index: 1; margin-bottom: auto; font-size: 10px; }
+.game-tile strong { z-index: 1; margin-top: 20px; font: 900 clamp(28px, 2.9vw, 44px)/.91 Arial,sans-serif; letter-spacing: -.072em; }
+.tile-arrow { position: absolute; z-index: 2; top: 13px; right: 14px; display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid currentColor; border-radius: 50%; font: 18px Arial,sans-serif; }
+.game-art { position: absolute; pointer-events: none; }
+.game-flight { background: #252622; color: #fafaf6; }
+.game-flight::before, .game-jump::before, .game-online::before { content: ""; position: absolute; inset: 0; pointer-events: none; }
+.game-flight::before { background: repeating-linear-gradient(151deg, transparent 0 24px, #eeeecc1a 25px, transparent 26px 36px); mask-image: linear-gradient(90deg, transparent, #000); }
+.flight-art { right: 20%; top: 9%; height: 87%; aspect-ratio: 128 / 409; rotate: 24deg; filter: drop-shadow(5px 7px 4px #0006); }
+.flight-art img { position: absolute; width: 349.2%; left: -125%; top: -4.9%; clip-path: polygon(44.8% 4.5%,54.6% 4.5%,55.7% 5.6%,55.6% 20.3%,57.8% 24.5%,57.8% 34%,56.3% 38.7%,58% 42%,63.5% 46.3%,64% 49.4%,64% 92.8%,62.5% 95.3%,37.6% 95.3%,36% 92.8%,36% 49.3%,37% 46.7%,42.5% 42.8%,44% 38.7%,42.4% 34%,42.3% 24.8%,44.5% 20.4%,44.2% 5.9%); }
+.game-jump { background: #dde5e0; border: 1px solid #c3cfcb; }
+.game-jump::before { background: repeating-radial-gradient(ellipse at 80% 85%, transparent 0 23px, #55716c30 24px, transparent 25px 34px); }
+.jump-art { right: 6%; bottom: -29%; height: 125%; width: 53%; object-fit: contain; object-position: bottom; rotate: 6deg; }
+.game-online { background: var(--signal); color: #152927; }
+.game-online::before { background: repeating-linear-gradient(55deg, transparent 0 9px, #12665e20 10px, transparent 11px); mask-image: linear-gradient(90deg, transparent, #000); }
+.hand-art { right: 11%; bottom: -9%; width: 29%; aspect-ratio: 5/7; rotate: 12deg; }
+.hand-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(1px 3px 3px #173e3c40); }
+.hand-art img:first-child { transform-origin: center bottom; transform: translateX(-12%) rotate(-24deg); }
+.arcade .home-games { display: none; }
+.site-credit { align-self: stretch; justify-content: space-between; padding: 14px 2px; margin: 6px 0 0; background: none; box-shadow: none; border: 0; border-radius: 0; backdrop-filter: none; }
+.site-credit-maker { background: none; border: 0; box-shadow: none; }
+.bottle-button { right: 4px; width: 30px; height: 30px; }
+
+.arcade { --flight-glass: linear-gradient(135deg,#fafaf6f0,#efefe6ce); --flight-rim: #fff9; }
+.flight, .durak-table { border-radius: var(--tile-radius); border: 1px solid var(--edge); box-shadow: none; }
+.flight-panel, .flight-leaders, .flight-meters div, .durak-panel, .durak-person, .durak-hand-panel { box-shadow: 0 3px 14px #1b201b24; }
+.flight-action, .durak-button { border: 0; border-radius: 12px; background: var(--coal); color: #fff; box-shadow: none; }
+.flight-action:hover, .durak-button:not(:disabled):hover { background: #444640; }
+.durak-button.durak-secondary { background: #e5e5dd; color: var(--coal); }
+.durak-button.durak-secondary:hover { background: #d4d5ca; }
+.flight-meters output { color: var(--signal-ink); }
+.durak-layout { padding-block: 0; gap: 12px; align-items: stretch; grid-template-columns: minmax(250px,.8fr) minmax(0,2fr); }
+.durak-lobby { align-self: stretch; display: flex; flex-direction: column; justify-content: center; padding: clamp(18px,2.4vw,36px); border: 1px solid var(--edge); border-radius: var(--tile-radius); background: var(--panel); }
+.durak h1 { font-size: clamp(46px,5.4vw,82px); }
+.durak h1 span + span { background: none; color: var(--coal); filter: none; }
+.durak-panel { background: #e9e9e1; box-shadow: none; border: none; }
+.durak-table { min-height: clamp(460px,63svh,650px); }
+
+@media (max-width: 850px) {
+  .shell, .arcade .shell { width: calc(100% - 32px); }
+  .masthead { gap: 8px; }
+  .game-nav a { padding-inline: 8px; }
+  .city, .arcade .city { display: none; }
+  .game-tile { padding: 16px; }
+  .tile-arrow { top: 11px; right: 11px; }
+}
+@media (max-width: 680px) {
+  :root { --tile-radius: 17px; --equalizer-height: 46px; }
+  .shell, .arcade .shell { width: calc(100% - 24px); }
+  .masthead, .arcade .masthead { flex-direction: column; justify-content: center; align-items: flex-start; padding: 13px 0 10px; gap: 7px; }
+  .arcade-home { gap: 8px; font-size: 16px; }
+  .arcade-home img { width: 30px; height: 30px; }
+  .game-nav { width: 100%; gap: 2px; }
+  .game-nav a { min-height: 33px; font-size: 12px; padding: 5px 9px; }
+  .hero { grid-template-columns: 1fr; gap: 9px; }
+  .intro { min-height: 295px; padding: 22px; }
+  .intro h1 { font-size: clamp(66px,16vw,94px); }
+  .gallery { min-height: 190px; --card-width: 124px; justify-items: end; padding: 19px 20% 16px 16px; }
+  .player, .arcade .player { gap: 5px; padding: 10px 12px 4px; margin-top: 9px; }
+  .record { width: 39px; height: 39px; }
+  .record img { width: 21px; height: 21px; }
+  .track { gap: 5px; }
+  .track-labels strong { font-size: 15px; }
+  .controls #play { width: 38px; height: 38px; }
+  .game-tiles { grid-template-columns: 1fr; gap: 9px; }
+  .game-tile { min-height: 135px; padding: 17px 20px; }
+  .game-tile strong { margin-top: 12px; font-size: 32px; }
+  .game-kind { font-size: 10px; }
+  .hand-art { right: 16%; width: 84px; }
+  .flight-art { right: 23%; }
+  .jump-art { right: 9%; width: 45%; }
+  .home-games { margin-top: 19px; }
+  .durak-layout { grid-template-columns: minmax(0,1fr); gap: 9px; }
+  .durak-table { min-height: 440px; }
+  .durak h1 { font-size: clamp(37px,10vw,59px); }
+  .site-credit { font-size: 11px; }
+  .equalizer { --equalizer-height: 26px; border-top: 1px solid var(--edge); background: var(--paper); }
+}
+
+/* Each route lives between the masthead and the player/credits. */
+html, body { overflow: clip; overscroll-behavior: none; }
+body, body.arcade { height: 100vh; height: 100dvh; min-height: 0; padding-bottom: 0; }
+.shell, .arcade .shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%; min-height: 0;
+  padding-bottom: calc(var(--equalizer-height) + env(safe-area-inset-bottom));
+}
+.arcade .shell { padding-bottom: env(safe-area-inset-bottom); }
+.masthead { min-height: clamp(42px, 7dvh, 72px); }
+main { display: grid; min-height: 0; gap: clamp(6px,1.3dvh,14px); grid-template-rows: minmax(0, 1.85fr) auto minmax(0, 1fr); }
+.arcade main { grid-template-rows: minmax(0,1fr) auto; }
+.hero, .intro, .gallery, .home-games, .game-tiles, .game-tile { min-height: 0; }
+.intro { padding: clamp(14px, 2.6dvh, 36px); }
+.intro h1 { font-size: clamp(50px, min(7.3vw,11dvh), 118px); }
+.gallery { container-type: size; padding: 0; place-content: center; }
+.deck { width: min(65cqw, 63cqh, 280px); }
+.player, .arcade .player { margin: 0; }
+.home-games { display: grid; grid-template-rows: auto minmax(0,1fr); margin: 0; }
+.game-tile { padding-block: clamp(10px,2dvh,20px); }
+.site-credit { margin: 0; padding-block: clamp(3px,1.3dvh,14px); }
+.arcade .flight:not([hidden]), .durak, .durak-layout { height: 100%; min-height: 0; }
+.durak-table { min-height: 0; grid-template-rows: auto minmax(0,1fr) auto; }
+.durak-lobby { min-height: 0; overflow-y: auto; justify-content: safe center; }
+.flight-overlay { align-content: safe end; }
+.soundcloud-host:not([hidden]) { max-height: 16dvh; overflow-y: auto; }
+.game-nav a, .arcade-home, .city, .home-games h2, .site-credit { text-shadow: 0 0 5px var(--paper), 0 0 10px var(--paper); }
+.game-nav a:hover, .game-nav a[aria-current="page"] { text-shadow: none; }
+@media (max-width: 680px) {
+  :root { --equalizer-height: 28px; }
+  body:not(.arcade) .game-nav { display: none; } /* The game tiles are always in view. */
+  .masthead, .arcade .masthead { padding-block: 5px; gap: 1px; }
+  main { grid-template-rows: minmax(0, 1fr) auto clamp(85px,17dvh,138px); gap: 7px; }
+  .hero { grid-template-rows: minmax(0,1.55fr) minmax(0,1fr); gap: 7px; }
+  .intro h1 { font-size: clamp(44px,min(16vw,8dvh),84px); }
+  .venue-tag { padding: 0 0 6px; }
+  .socials { gap: 4px; }
+  .socials a { min-height: 32px; }
+  .gallery { grid-template-columns: 1fr; place-content: center; }
+  .deck { justify-self: center; width: min(50cqw, 63cqh, 180px); }
+  .home-games h2 { font-size: 20px; margin-bottom: 4px; }
+  .game-tiles { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 5px; }
+  .game-tile { justify-content: end; padding: 8px; border-radius: 12px; }
+  .game-kind, .tile-arrow { display: none; }
+  .game-tile strong { margin: 0; font-size: clamp(15px,4vw,22px); }
+  .game-flight .flight-art { top: 5%; right: 14%; height: 60%; }
+  .game-jump .jump-art { bottom: auto; top: 2%; right: 4%; height: 78%; }
+  .game-online .hand-art { bottom: auto; top: 7%; right: 10%; width: 30%; max-height: 66%; }
+  .durak-layout { grid-template-rows: auto minmax(0,1fr); }
+  .durak-lobby { padding: 8px 12px; max-height: 35dvh; }
+  .durak h1 { font-size: clamp(22px,5dvh,38px); margin-bottom: 4px; }
+  .durak .durak-demo-note:empty { display: none; }
+  .durak-panel { padding: 7px 9px; }
+  .durak-panel input, .durak-panel .durak-button { min-height: 32px; }
+  .durak .durak-game-type { margin-bottom: 3px; }
+}
+@media (max-height: 640px) {
+  .site-credit { padding: 1px 2px; font-size: 10px; }
+  .site-credit-maker { padding: 2px 4px; }
+  .venue-tag { display: none; }
+  .intro { justify-content: space-around; }
+  .player, .arcade .player { padding-block: 3px; }
+  .record { width: 34px; height: 34px; }
+  .game-tile strong { margin-top: 0; }
+  .flight-overlay { padding: 6px; }
+  .flight-panel { padding: 12px; }
+  .flight-panel h1 { font-size: 28px; margin-bottom: 5px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  :root { --equalizer-height: 20px; }
+  .masthead, .arcade .masthead { min-height: 36px; padding: 0; flex-flow: row nowrap; justify-content: space-between; align-items: center; }
+  .masthead .game-nav { width: auto; }
+  body:not(.arcade) .game-nav { display: flex; }
+  body:not(.arcade) main { grid-template-rows: minmax(0,1fr) auto; }
+  .home-games { display: none; }
+  .hero { grid-template-columns: 1.65fr 1fr; grid-template-rows: minmax(0,1fr); }
+  .gallery { grid-template-columns: 1fr; }
+  .gallery .deck { grid-column: 1; }
+  .intro h1 { font-size: clamp(36px,14dvh,70px); }
+  .durak-layout { grid-template: minmax(0,1fr) / minmax(180px,.8fr) minmax(0,2fr); }
+  .durak-lobby { max-height: none; padding: 10px; }
+  .durak h1 { font-size: 30px; }
+  .durak-table { padding: 6px; gap: 4px; }
+  .durak-hand-panel { padding: 5px; gap: 1px; }
+}

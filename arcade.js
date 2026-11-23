@@ -6,7 +6,8 @@
   let active = null;
 
   function showView() {
-    const route = location.hash.slice(1);
+    const fragment = location.hash.slice(1);
+    const route = fragment.startsWith("dossiers/") ? "dossiers" : fragment;
     const next = views.find(view => view.dataset.gameView === route) ?? null;
     if (next === active) return;
     active = next;
@@ -17,7 +18,8 @@
     }
     document.body.classList.toggle("arcade", Boolean(active));
     home.hidden = Boolean(active);
-    homeLink.hidden = !active;
+    if (active) homeLink.removeAttribute("aria-current");
+    else homeLink.setAttribute("aria-current", "page");
     document.title = active ? active.dataset.gameTitle + " · FREGAT SQUAD" : "FREGAT SQUAD";
     window.scrollTo(0, 0);
     window.dispatchEvent(new Event("fregat:view"));

@@ -7,6 +7,8 @@
   const status = document.querySelector("#jump-status");
   const action = document.querySelector("#jump-action");
   const pause = document.querySelector("#jump-pause");
+  const stick = document.querySelector("#jump-stick");
+  const knob = stick.querySelector(".jump-stick-knob");
   const scoreOutput = document.querySelector("#jump-score");
   const bestOutput = document.querySelector("#jump-best");
   const board = window.fregatArcade.leaderboard({
@@ -119,6 +121,11 @@
     return platform.x + (platform.travel ? Math.sin(elapsed * platform.speed + platform.phase) * platform.travel : 0);
   }
 
+  function distanceAcrossField(a, b) {
+    const distance = Math.abs(a - b);
+    return Math.min(distance, field.width - distance);
+  }
+
   function picture({ image, crop }, x, bottom, width, height) {
     if (image.complete && image.naturalWidth) {
       const source = crop ?? [0, 0, image.naturalWidth, image.naturalHeight];
@@ -216,7 +223,13 @@
       if (platform.y >= camera - 65 && platform.y <= camera + field.height + 12) drawPlatform(platform);
     }
     if (mode === "ready") drawPlayer(field.height * .37, field.width * .54);
-    else drawPlayer(player.y - camera, player.x);
+    else {
+      const foot = player.y - camera;
+      drawPlayer(foot, player.x);
+      // Include the wings and the rocket flame while the sprite straddles the seam.
+      if (player.x < 35) drawPlayer(foot, player.x + field.width);
+      if (player.x > field.width - 35) drawPlayer(foot, player.x - field.width);
+    }
   }
 
   function showPanel(state, heading, message, buttonText, focus = true) {
@@ -224,8 +237,8 @@
     cancelAnimationFrame(frameId);
     then = 0;
     keys.clear();
-    touchDirection = 0;
-    activePointer = null;
+    releaseSteering();
+    stick.hidden = true;
     title.textContent = heading;
     status.textContent = message;
     action.textContent = buttonText;
@@ -256,9 +269,9 @@
   function update(dt) {
     elapsed += dt;
     const direction = readDirection();
-    if (direction) player.facing = direction;
+    if (direction) player.facing = Math.sign(direction);
     player.vx += (direction * 220 - player.vx) * Math.min(1, dt * 15);
-    player.x = clamp(player.x + player.vx * dt, 12, field.width - 12);
+    player.x = (player.x + player.vx * dt + field.width) % field.width;
     const wasY = player.y;
     fuel = Math.max(0, fuel - dt);
     player.vy = fuel > 0 ? -485 : player.vy + 1110 * dt;
@@ -267,21 +280,22 @@
     for (const platform of platforms) {
       if (platform.spentAt !== undefined) continue;
       const x = xOf(platform);
+      const distance = distanceAcrossField(player.x, x);
       if (platform.item === "cactus" && fuel === 0 &&
-          Math.abs(player.x - x - platform.cactusSide * (platform.width / 2 - 13)) < 22 &&
+          distanceAcrossField(player.x, x + platform.cactusSide * (platform.width / 2 - 13)) < 22 &&
           player.y > platform.y - 34 && player.y - 40 < platform.y) {
         end("Кактус!");
         return;
       }
-      if (platform.item === "rocket" && Math.abs(player.x - x) < 25 &&
+      if (platform.item === "rocket" && distance < 25 &&
           player.y > platform.y - 55 && player.y - 46 < platform.y - 11) {
         platform.item = "";
         fuel = 1.35;
         bonuses += 50;
         player.vy = -485;
       }
-      if (player.vy <= 0 || Math.abs(player.x - x) > platform.width / 2 + 9) continue;
-      const useSpring = platform.item === "spring" && Math.abs(player.x - x) < 27;
+      if (player.vy <= 0 || distance > platform.width / 2 + 9) continue;
+      const useSpring = platform.item === "spring" && distance < 27;
       const landing = platform.y - (useSpring ? 12 : 0);
       if (wasY <= landing && player.y >= landing) {
         player.y = landing;
@@ -323,6 +337,7 @@
     mode = "playing";
     overlay.hidden = true;
     pause.hidden = false;
+    stick.hidden = false;
     stage.focus({ preventScroll: true });
     frameId = requestAnimationFrame(frame);
   }
@@ -332,26 +347,50 @@
   }
 
   function steer(event) {
-    const { left, width } = canvas.getBoundingClientRect();
-    touchDirection = event.clientX < left + width / 2 ? -1 : 1;
+    const control = event.currentTarget;
+    const { left, width } = control.getBoundingClientRect();
+    const offset = event.clientX - left - width / 2;
+    if (control === canvas) {
+      touchDirection = offset < 0 ? -1 : 1;
+      return;
+    }
+    const travel = (width - knob.offsetWidth) / 2 - 3;
+    const position = clamp(offset / travel, -1, 1);
+    touchDirection = Math.abs(position) < .1 ? 0 : position;
+    stick.style.setProperty("--stick-x", position * travel + "px");
+  }
+
+  function releaseSteering() {
+    const pointer = activePointer;
+    activePointer = null;
+    touchDirection = 0;
+    stick.removeAttribute("data-held");
+    stick.style.removeProperty("--stick-x");
+    if (pointer !== null) {
+      for (const control of [canvas, stick]) {
+        if (control.hasPointerCapture(pointer)) control.releasePointerCapture(pointer);
+      }
+    }
   }
 
   action.addEventListener("click", play);
   pause.addEventListener("click", () => suspend());
-  canvas.addEventListener("pointerdown", event => {
-    if (mode !== "playing" || !event.isPrimary || event.button !== 0) return;
-    activePointer = event.pointerId;
-    canvas.setPointerCapture(activePointer);
-    steer(event);
-  });
-  canvas.addEventListener("pointermove", event => { if (event.pointerId === activePointer) steer(event); });
-  for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
-    canvas.addEventListener(type, event => {
-      if (event.pointerId === activePointer) {
-        activePointer = null;
-        touchDirection = 0;
-      }
+  for (const control of [canvas, stick]) {
+    control.addEventListener("pointerdown", event => {
+      if (mode !== "playing" || activePointer !== null || !event.isPrimary || event.button !== 0) return;
+      activePointer = event.pointerId;
+      control.setPointerCapture(activePointer);
+      if (control === stick) stick.setAttribute("data-held", "");
+      steer(event);
     });
+    control.addEventListener("pointermove", event => {
+      if (event.pointerId === activePointer) steer(event);
+    });
+    for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
+      control.addEventListener(type, event => {
+        if (event.pointerId === activePointer) releaseSteering();
+      });
+    }
   }
   document.addEventListener("keydown", event => {
     if (stage.hidden || event.altKey || event.ctrlKey || event.metaKey || event.target.closest("input")) return;

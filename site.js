@@ -69,7 +69,7 @@ function syncDotMotion() {
 
 let rotating = false;
 
-deck.addEventListener("click", async () => {
+async function rotateDeck() {
   if (rotating) return;
   rotating = true;
   const outgoing = cards.shift();
@@ -78,7 +78,7 @@ deck.addEventListener("click", async () => {
     await outgoing.animate([
       { transform: "translateX(0) rotate(0)" },
       { transform: "translateX(-35%) rotate(-16deg) scale(.94)", opacity: 0 }
-    ], { duration: 220, easing: "ease-in", fill: "forwards" }).finished;
+    ], { duration: 110, easing: "ease-in", fill: "forwards" }).finished;
   }
 
   cards.push(outgoing);
@@ -89,10 +89,28 @@ deck.addEventListener("click", async () => {
   });
   outgoing.getAnimations().forEach(animation => animation.cancel());
   if (!reducedMotion.matches) {
-    outgoing.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 350 });
+    outgoing.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 175 });
   }
   rotating = false;
-});
+}
+
+const deckHome = deck.closest(".hero");
+let deckTimer;
+function scheduleDeck() {
+  clearTimeout(deckTimer);
+  if (!reducedMotion.matches && !document.hidden && !deckHome.hidden) {
+    deckTimer = setTimeout(advanceDeck, 2750);
+  }
+}
+function advanceDeck() {
+  rotateDeck();
+  scheduleDeck();
+}
+deck.addEventListener("click", advanceDeck);
+document.addEventListener("visibilitychange", scheduleDeck);
+window.addEventListener("fregat:view", scheduleDeck);
+reducedMotion.addEventListener("change", scheduleDeck);
+scheduleDeck();
 
 const audio = document.querySelector("#audio");
 const playlist = document.querySelector("#playlist");
@@ -118,6 +136,9 @@ const cloudState = { playing: false, position: 0, duration: 0 };
 function updateMusicVolume() {
   audio.volume = Number(volume.value) / 100;
   cloudPlayer?.setVolume(Number(volume.value));
+  volumeValue.value = volume.value + "%";
+  volume.style.setProperty("--position", volumeValue.value);
+  soundToggle.toggleAttribute("data-muted", audio.volume === 0);
 }
 
 updateMusicVolume();
@@ -289,9 +310,6 @@ document.addEventListener("keydown", event => {
 
 volume.addEventListener("input", () => {
   updateMusicVolume();
-  volumeValue.value = volume.value + "%";
-  volume.style.setProperty("--position", volumeValue.value);
-  soundToggle.toggleAttribute("data-muted", audio.volume === 0);
   if (waitingForClick && audio.volume > 0) playTrack();
 });
 
