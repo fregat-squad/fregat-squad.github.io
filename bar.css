@@ -13,7 +13,13 @@
 .bar-heading span { color: #b0d7c3; }
 .bar-wallet { align-items: baseline; flex-wrap: wrap; margin-top: clamp(7px,2vh,24px); line-height: 1; }
 .bar-wallet strong { font: 800 clamp(31px,5.5vw,86px)/1 "Segoe UI",sans-serif; letter-spacing: -.07em; font-variant-numeric: tabular-nums; }
-.bar-wallet span { font: italic 500 clamp(15px,2vw,27px)/1 Georgia,serif; color: #b4e9d0; }
+.bar-wallet span {
+  font: 650 clamp(13px,1.25vw,19px)/1.2 "Segoe UI", Arial, sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #b4e9d0;
+  white-space: nowrap;
+}
 .bar-scene { position: relative; min-height: 0; display: grid; place-items: center; container-type: size; }
 .bar-halo { position: absolute; left: 50%; top: 52%; translate: -50% -50%; width: min(86cqw,91cqh); aspect-ratio: 1; border-radius: 50%; border: 1px solid #d3ffdc1a; box-shadow: 0 0 0 14px #bdfcd806,0 0 0 30px #dcffe506; background: radial-gradient(circle,#adecce11,transparent 68%); }
 #bar-tap { position: relative; width: min(77cqw,82cqh,330px); aspect-ratio: 1; display: grid; place-items: center; background: transparent; padding: 0; border: 0; cursor: pointer; touch-action: manipulation; user-select: none; -webkit-tap-highlight-color: transparent; }
