@@ -13,6 +13,10 @@
   <link rel="stylesheet" href="durak.css?v=arcade-glass">
   <link rel="stylesheet" href="bento.css">
   <link rel="stylesheet" href="dossiers.css">
+  <link rel="stylesheet" href="bar.css">
+  <script src="bar-rules.js" defer></script>
+  <script src="bar-save.js" defer></script>
+  <script src="bar.js" defer></script>
   <script src="spectra.js" defer></script>
   <script src="soundcloud-player.js" defer></script>
   <script src="site.js?v=equalizer-wave" defer></script>
@@ -35,6 +39,7 @@
         <a href="#flappy">Flappy Steersman</a>
         <a href="#leha-jump">Leha Jump</a>
         <a href="#fregat-online">FREGAT ONLINE</a>
+        <a href="#alko-clicker">Алко-кликер</a>
       </nav>
       <a class="archive-link" href="#dossiers"><i aria-hidden="true"></i>Досье</a>
       <a class="city" href="https://yandex.ru/maps/org/fregat/206045547952/?ll=50.057565%2C58.547679&amp;z=14" target="_blank" rel="noopener">
@@ -205,6 +210,46 @@
           </section>
         </div>
       </section>
+      <section class="bar-game" data-game-view="alko-clicker" data-game-title="Алко-кликер" aria-label="Алко-кликер" hidden>
+        <div class="bar-counter">
+          <header class="bar-heading"><h1>Алко-кликер</h1><span>FREGAT BAR</span></header>
+          <div class="bar-wallet"><strong id="bar-balance">0</strong><span>Fregat Coin</span></div>
+          <div class="bar-scene">
+            <div class="bar-halo" aria-hidden="true"></div>
+            <button type="button" id="bar-tap" aria-label="Нажать на рюмку и заработать Fregat Coin">
+              <svg viewBox="0 0 200 210" class="bar-glass" aria-hidden="true">
+                <defs>
+                  <linearGradient id="bar-crystal"><stop stop-color="#edfff8" stop-opacity=".85"/><stop offset=".09" stop-color="#dcfff5" stop-opacity=".22"/><stop offset=".24" stop-color="#ecffff" stop-opacity=".62"/><stop offset=".34" stop-color="#99ded3" stop-opacity=".15"/><stop offset=".72" stop-color="#b2eee3" stop-opacity=".13"/><stop offset=".88" stop-color="#effff8" stop-opacity=".66"/><stop offset="1" stop-color="#a8e6da" stop-opacity=".35"/></linearGradient>
+                  <clipPath id="bar-inside"><path d="M27 38 Q100 60 173 38 L148 164 Q100 180 52 164Z"/></clipPath>
+                </defs>
+                <path d="M22 32 Q100 9 178 32 L151 181 Q100 202 49 181Z" fill="url(#bar-crystal)" stroke="#ddfff2" stroke-width="2"/>
+                <g clip-path="url(#bar-inside)"><g class="bar-fill">
+                  <path d="M18 60 Q61 48 99 59 T182 60 V189 H18Z" fill="var(--liquid)" opacity=".83"/>
+                  <path d="M18 60 Q61 48 99 59 T182 60" fill="none" stroke="#fffbe3" stroke-width="3" opacity=".85"/>
+                </g></g>
+                <g fill="none" stroke="#d7fff4"><path opacity=".74" d="M26 40 54 178 68 183 47 46 M70 47 81 184 M151 45 134 184 145 180 171 43"/><path stroke-width="3" opacity=".32" d="m57 48 16 122m67-121-12 121"/></g>
+                <path d="M48 169 Q100 189 154 169 L151 182 Q100 200 49 182Z" fill="url(#bar-crystal)"/>
+                <ellipse cx="100" cy="32" rx="78" ry="13" fill="#b2fbe7" fill-opacity=".12" stroke="#e3fff5" stroke-width="3"/>
+                <path d="M30 30 Q68 16 119 20" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <div class="bar-serving"><strong id="bar-serving">Пустая рюмка</strong><button type="button" id="bar-sip" hidden>Выпить</button></div>
+          <div class="bar-rates"><span><b id="bar-power">+1</b> за тап</span><span><b id="bar-rate">0</b> FC / сек</span></div>
+        </div>
+        <div class="bar-ledger">
+          <div class="bar-switch" aria-label="Разделы бара"><button type="button" aria-pressed="true" data-bar-panel="shelf">Бар</button><button type="button" aria-pressed="false" data-bar-panel="snacks">Закусь</button><button type="button" aria-pressed="false" data-bar-panel="upgrades">Прокачка</button><button type="button" aria-pressed="false" data-bar-panel="rich">Рейтинг</button></div>
+          <div class="bar-catalog" id="bar-shelf"><header><h2>Барная карта</h2><span id="bar-count"></span></header><div id="bar-drinks"></div></div>
+          <div class="bar-catalog" id="bar-upgrades" hidden><header><h2>Прокачка</h2></header><div id="bar-equipment"></div></div>
+          <div class="bar-catalog" id="bar-snacks" hidden><header><h2>Закусь</h2></header><p id="bar-bites"></p><div id="bar-food"></div></div>
+          <div class="bar-catalog" id="bar-rich" hidden><header><h2>Богатейшие</h2></header>
+            <form id="bar-enroll"><label for="bar-nick">Ник в рейтинге</label><input id="bar-nick" maxlength="20" required autocomplete="nickname"><button>Войти в рейтинг</button></form>
+            <p id="bar-profile"></p><ol id="bar-leaders"></ol><p id="bar-rank-status" role="status"></p>
+          </div>
+          <dialog id="bar-photo" aria-labelledby="bar-caption"><button type="button" aria-label="Закрыть фото">×</button><img alt=""><h2 id="bar-caption"></h2><p></p></dialog>
+          <p class="bar-message" id="bar-message" role="status">Нажимай на рюмку, чтобы заработать монеты.</p>
+        </div>
+      </section>
       <section class="dossiers" data-game-view="dossiers" data-game-title="Досье Фрегата" aria-label="Досье Фрегата" hidden>
         <div id="dossier-desk"></div>
         <dialog id="member-file" aria-labelledby="member-file-name">
@@ -291,6 +336,10 @@
             <strong>Fregat<br>Online</strong>
             <span class="game-art hand-art" aria-hidden="true"><img src="media/durak/hearts-A.png" alt=""><img src="media/durak/spades-K.png" alt=""></span>
             <span class="tile-arrow" aria-hidden="true">↗</span>
+          </a>
+          <a class="game-tile game-bar" href="#alko-clicker">
+            <span class="game-kind">Кликер</span><strong>Алко-<br>кликер</strong>
+            <span class="game-art bar-tile-glass" aria-hidden="true"></span><span class="tile-arrow" aria-hidden="true">↗</span>
           </a>
         </div>
       </section>
