@@ -23,34 +23,73 @@
     window.dispatchEvent(new Event("fregat:view"));
   }
 
-  function leaderboard({ entry, board, status, action, key, minimum }) {
+  function leaderboard({ entry, board, status, action, key, game, minimum }) {
     const nickname = entry.querySelector("input");
+    const submit = entry.querySelector("button");
     const compact = matchMedia("(max-width: 680px)");
     const table = board.querySelector("table");
+    const scroll = table.parentElement;
     const empty = board.querySelector("p");
+    const fullList = board.querySelector("[data-leaders-more]");
+    const importButton = board.querySelector("[data-leaders-import]");
+    const feedback = board.querySelector("[data-leaders-feedback]");
+    const local = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+    const server = document.body.dataset.leaderboardUrl;
+    const endpoint = (local ? "/.netlify/functions/leaderboard" : server) + "?game=" + game;
     let pending = null;
-    const rank = items => items.sort((a, b) => b.score - a.score);
     let leaders = [];
+    let saved = [];
+    let expanded = false;
+    let writing = false;
+    let requestNumber = 0;
     try {
-      const saved = JSON.parse(localStorage.getItem(key));
-      if (Array.isArray(saved)) {
-        leaders = rank(saved.filter(item => item && typeof item.name === "string" &&
-          item.name.trim() && item.name.length <= 20 && Number.isSafeInteger(item.score) && item.score >= minimum));
+      const previous = JSON.parse(localStorage.getItem(key));
+      if (!localStorage.getItem(key + "-imported") && Array.isArray(previous)) {
+        saved = previous.filter(item => item && typeof item.name === "string" &&
+          item.name.trim() && item.name.length <= 20 && !/[\p{Cc}\p{Cf}]/u.test(item.name) &&
+          Number.isSafeInteger(item.score) && item.score >= minimum);
       }
-    } catch {
-      // A leaderboard still works in memory when storage is unavailable.
-    }
+    } catch {}
+    importButton.hidden = saved.length === 0;
 
     function render() {
-      const rows = leaders.slice(0, 5).map(({ name, score }, index) => {
+      const rows = leaders.slice(0, expanded ? leaders.length : 10).map(({ name, score, imported }, index) => {
         const row = document.createElement("tr");
-        [index + 1, name, score].forEach(value => { row.insertCell().textContent = value; });
-        row.cells[1].title = name;
+        [index + 1, imported ? name + " *" : name, score].forEach(value => { row.insertCell().textContent = value; });
+        row.cells[1].title = imported ? name + " · Импортированный рекорд" : name;
         return row;
       });
-      table.tBodies[0].replaceChildren(...rows);
+      const fragment = document.createDocumentFragment();
+      for (const row of rows) fragment.append(row);
+      table.tBodies[0].replaceChildren(fragment);
       table.hidden = rows.length === 0;
+      scroll.hidden = table.hidden;
       empty.hidden = rows.length > 0;
+      fullList.hidden = leaders.length <= 10;
+      fullList.textContent = expanded ? "Показать топ-10" : "Все рекорды (" + leaders.length + ")";
+      fullList.setAttribute("aria-expanded", String(expanded));
+    }
+
+    async function request(body) {
+      const response = await fetch(endpoint, body ? {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+      } : {});
+      if (!response.ok) throw new Error("Leaderboard unavailable");
+      return response.json();
+    }
+
+    async function refresh() {
+      if (board.closest("[data-game-view]").hidden || !board.open || writing) return;
+      const id = ++requestNumber;
+      try {
+        const result = await request();
+        if (id !== requestNumber) return;
+        leaders = result.leaders;
+        feedback.textContent = leaders.some(item => item.imported) ? "* Импортированный рекорд" : "";
+        render();
+      } catch {
+        if (id === requestNumber) feedback.textContent = "Таблица пока недоступна.";
+      }
     }
 
     function offer(score) {
@@ -61,28 +100,39 @@
       return pending !== null;
     }
 
-    entry.addEventListener("submit", event => {
+    async function publish(body) {
+      writing = true;
+      requestNumber++;
+      submit.disabled = importButton.disabled = true;
+      try {
+        const result = await request(body);
+        leaders = result.leaders;
+        feedback.textContent = leaders.some(item => item.imported) ? "* Импортированный рекорд" : "";
+        render();
+        return result;
+      } finally {
+        writing = false;
+        submit.disabled = importButton.disabled = false;
+      }
+    }
+
+    entry.addEventListener("submit", async event => {
       event.preventDefault();
-      if (pending === null) return;
+      if (pending === null || writing) return;
       const name = nickname.value.trim().replace(/\s+/g, " ");
-      if (!name) {
-        nickname.setCustomValidity("Введи никнейм.");
+      if (!name || /[\p{Cc}\p{Cf}]/u.test(name)) {
+        nickname.setCustomValidity("Проверь никнейм.");
         nickname.reportValidity();
         return;
       }
-      const nameKey = name.normalize("NFC").toLowerCase();
-      const previous = leaders.find(item => item.name.normalize("NFC").toLowerCase() === nameKey);
-      if (!previous || pending > previous.score) {
-        leaders = rank([...leaders.filter(item => item !== previous), { name, score: pending }]);
-        try {
-          localStorage.setItem(key, JSON.stringify(leaders));
-          status.textContent = "Результат записан.";
-        } catch {
-          status.textContent = "Результат сохранён в этой вкладке.";
-        }
-        render();
-      } else {
-        status.textContent = "У этого ника уже есть результат: " + previous.score + ".";
+      const score = pending;
+      try {
+        const result = await publish({ name, score });
+        if (pending !== score) return;
+        status.textContent = result.changed ? "Результат в общей таблице." : "У этого ника уже есть такой же или лучший результат.";
+      } catch {
+        if (pending === score) status.textContent = "Запись не удалась. Попробуй ещё раз.";
+        return;
       }
       offer(0);
       board.open = true;
@@ -90,10 +140,33 @@
       action.focus({ preventScroll: true });
     });
 
+    fullList.addEventListener("click", () => {
+      expanded = !expanded;
+      render();
+      scroll.scrollTop = 0;
+      refresh();
+    });
+    importButton.addEventListener("click", async () => {
+      if (writing) return;
+      try {
+        while (saved.length) {
+          await publish({ imported: true, entries: saved.slice(0, 100) });
+          saved = saved.slice(100);
+        }
+        importButton.hidden = true;
+        try { localStorage.setItem(key + "-imported", "1"); } catch {}
+      } catch {
+        feedback.textContent = "Перенос не завершён. Попробуй ещё раз.";
+      }
+    });
     nickname.addEventListener("input", () => nickname.setCustomValidity(""));
     board.open = !compact.matches;
     compact.addEventListener("change", () => { board.open = !compact.matches; });
+    board.addEventListener("toggle", refresh);
+    window.addEventListener("fregat:view", refresh);
+    window.addEventListener("focus", refresh);
     render();
+    refresh();
     return { offer, focus: () => nickname.focus({ preventScroll: true }), get pending() { return pending !== null; } };
   }
 

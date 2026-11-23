@@ -12,7 +12,7 @@
   const board = window.fregatArcade.leaderboard({
     entry: document.querySelector("#jump-entry"),
     board: document.querySelector("#jump-leaders"),
-    status, action, key: "fregat-jump-leaders", minimum: 150
+    status, action, key: "fregat-jump-leaders", game: "jump", minimum: 150
   });
   const bestKey = "fregat-jump-best";
   const field = { width: 380, height: 560 };

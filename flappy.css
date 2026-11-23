@@ -159,6 +159,20 @@
 .flight-leaders { min-width: 0; border-radius: 18px; padding: 10px 12px; align-self: end; }
 .flight-leaders summary { padding: 4px 0; font-weight: 800; cursor: pointer; }
 .flight-leaders-scope { display: block; color: #394552; font-size: 12px; }
+.flight-leaders-scope:not(:empty) { margin-top: 5px; }
+.flight-leaders-scroll { max-height: min(31svh, 260px); overflow: auto; overscroll-behavior: contain; }
+.flight-leaders-button {
+  margin-top: 6px;
+  padding: 5px 9px;
+  border: 1px solid var(--flight-rim);
+  border-radius: 10px;
+  background: var(--flight-glass);
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.flight-leaders-button:disabled { opacity: .6; cursor: wait; }
 .flight-leaders p { margin: 6px 0 2px; font-size: 13px; color: #394552; }
 .flight-leaders table { width: 100%; margin-top: 4px; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
 .flight-leaders th, .flight-leaders td { padding: 5px 2px; text-align: left; }

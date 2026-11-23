@@ -12,7 +12,7 @@
   const leaderboard = window.fregatArcade.leaderboard({
     entry: document.querySelector("#flight-entry"),
     board: document.querySelector("#flight-leaders"),
-    status, action, key: "fregat-flappy-leaders", minimum: 21
+    status, action, key: "fregat-flappy-leaders", game: "flappy", minimum: 21
   });
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
   const recordKey = "fregat-flappy-best";

@@ -8,18 +8,18 @@
   <link rel="icon" href="media/logo.jpg">
   <link rel="preload" as="image" href="media/steersman.png">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="flappy.css">
+  <link rel="stylesheet" href="flappy.css?v=leaderboards">
   <link rel="stylesheet" href="jump.css">
   <link rel="stylesheet" href="durak.css">
   <script src="spectra.js" defer></script>
   <script src="soundcloud-player.js" defer></script>
   <script src="site.js" defer></script>
-  <script src="arcade.js" defer></script>
-  <script src="flappy.js" defer></script>
-  <script src="jump.js" defer></script>
+  <script src="arcade.js?v=leaderboards" defer></script>
+  <script src="flappy.js?v=leaderboards" defer></script>
+  <script src="jump.js?v=leaderboards" defer></script>
   <script src="durak.js" defer></script>
 </head>
-<body>
+<body data-leaderboard-url="https://fregat-squad-multiplayer.netlify.app/.netlify/functions/leaderboard">
   <canvas class="dot-wave" aria-hidden="true"></canvas>
   <div class="dot-light" aria-hidden="true"></div>
   <div class="shell">
@@ -84,12 +84,16 @@
           </div>
           <details class="flight-leaders" id="flight-leaders">
             <summary>Таблица лидеров</summary>
-            <small class="flight-leaders-scope">В этом браузере</small>
-            <p id="flight-leaders-empty">Для записи нужно набрать 21 очко.</p>
-            <table aria-label="Пять лучших результатов" id="flight-leaders-table" hidden>
-              <thead><tr><th scope="col">Место</th><th scope="col">Ник</th><th scope="col">Очки</th></tr></thead>
-              <tbody></tbody>
-            </table>
+            <p id="flight-leaders-empty">Запись от 21 очка.</p>
+            <div class="flight-leaders-scroll" tabindex="0" role="region" aria-label="Общий рейтинг Flappy Steersman" hidden>
+              <table aria-label="Результаты Flappy Steersman" id="flight-leaders-table" hidden>
+                <thead><tr><th scope="col">Место</th><th scope="col">Ник</th><th scope="col">Очки</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <button type="button" class="flight-leaders-button" data-leaders-more hidden>Все рекорды</button>
+            <button type="button" class="flight-leaders-button" data-leaders-import hidden>Перенести рекорды из этого браузера</button>
+            <small class="flight-leaders-scope" data-leaders-feedback role="status"></small>
           </details>
         </div>
       </section>
@@ -121,12 +125,16 @@
           </div>
           <details class="flight-leaders" id="jump-leaders">
             <summary>Таблица лидеров</summary>
-            <small class="flight-leaders-scope">В этом браузере</small>
             <p>Запись от 150 очков.</p>
-            <table aria-label="Пять лучших результатов Leha Jump" hidden>
-              <thead><tr><th scope="col">Место</th><th scope="col">Ник</th><th scope="col">Очки</th></tr></thead>
-              <tbody></tbody>
-            </table>
+            <div class="flight-leaders-scroll" tabindex="0" role="region" aria-label="Общий рейтинг Leha Jump" hidden>
+              <table aria-label="Результаты Leha Jump" hidden>
+                <thead><tr><th scope="col">Место</th><th scope="col">Ник</th><th scope="col">Очки</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <button type="button" class="flight-leaders-button" data-leaders-more hidden>Все рекорды</button>
+            <button type="button" class="flight-leaders-button" data-leaders-import hidden>Перенести рекорды из этого браузера</button>
+            <small class="flight-leaders-scope" data-leaders-feedback role="status"></small>
           </details>
         </div>
       </section>
