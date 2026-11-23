@@ -128,6 +128,7 @@ let equalizerFrame = 0;
 let equalizerSize;
 let equalizerPlaying = false;
 let equalizerTint = 0;
+let equalizerMusicMix = 0;
 let lastEqualizerPaint = -Infinity;
 const bandLevels = new Float32Array(bandCount);
 
@@ -136,9 +137,11 @@ function loadSpectrum() {
   waveform = atob(trackSpectra[tracks[currentTrack].dataset.file] || "");
 }
 
-function drawEqualizer(playing, delta = 0) {
+function drawEqualizer(timestamp, delta = 0) {
   const { width, height } = equalizerSize;
-  const active = playing && waveform.length >= bandCount;
+  const active = equalizerPlaying && waveform.length >= bandCount;
+  const targetMix = active ? 1 : 0;
+  equalizerMusicMix += (targetMix - equalizerMusicMix) * (1 - Math.exp(-delta / (active ? 160 : 240)));
   const frame = Math.min(Math.max(0, audio.currentTime) * framesPerSecond, waveform.length / bandCount - 1);
   const frameIndex = Math.floor(frame);
   const nextFrameIndex = Math.min(frameIndex + 1, waveform.length / bandCount - 1);
@@ -163,19 +166,20 @@ function drawEqualizer(playing, delta = 0) {
 
   const bars = new Path2D();
   const glints = new Path2D();
+  const phase = reducedMotion.matches ? 0 : timestamp / 1000;
   for (let i = 0; i < barCount; i++) {
     const position = i / (barCount - 1);
     const contour = .5 + .5 * Math.cos((position - .12) * Math.PI * 5);
     const texture = .88 + .12 * Math.cos(i * .66);
-    const idle = (.12 + .19 * contour) * texture;
-    let strength = idle;
-    if (active) {
-      const frequency = (1 - contour) * (bandCount - 1);
-      const low = Math.floor(frequency);
-      const high = Math.min(low + 1, bandCount - 1);
-      const energy = bandLevels[low] + (bandLevels[high] - bandLevels[low]) * (frequency - low);
-      strength = idle * .65 + energy * .8 * texture;
-    }
+    const sweep = .5 + .5 * Math.cos(position * Math.PI * 6 - phase * 2.4);
+    const swell = .5 + .5 * Math.cos(position * Math.PI * 3 + phase * 1.4);
+    const idle = (.09 + .22 * sweep + .14 * swell) * texture;
+    const frequency = (1 - contour) * (bandCount - 1);
+    const low = Math.floor(frequency);
+    const high = Math.min(low + 1, bandCount - 1);
+    const energy = bandLevels[low] + (bandLevels[high] - bandLevels[low]) * (frequency - low);
+    const music = (.08 + .12 * contour + .8 * energy) * texture;
+    const strength = idle + (music - idle) * equalizerMusicMix;
     const barHeight = 8 + Math.pow(strength, 1.12) * (height - 8);
     const x = i * step;
     const y = height - barHeight;
@@ -202,40 +206,51 @@ function drawEqualizer(playing, delta = 0) {
 }
 
 function animateEqualizer(timestamp) {
+  equalizerFrame = 0;
   const delta = timestamp - lastEqualizerPaint;
-  if (delta >= (reducedMotion.matches ? 150 : 16)) {
-    drawEqualizer(equalizerPlaying, Math.min(delta, 150));
+  if (delta >= (reducedMotion.matches ? 150 : equalizerPlaying ? 16 : 32)) {
+    drawEqualizer(timestamp, Math.min(delta, 150));
     lastEqualizerPaint = timestamp;
   }
-  if (equalizerPlaying || equalizerTint > .008) {
+  syncEqualizerMotion();
+}
+
+function syncEqualizerMotion() {
+  const visible = !document.hidden && !document.body.classList.contains("arcade");
+  const moving = !reducedMotion.matches || equalizerPlaying || equalizerMusicMix > .008 || equalizerTint > .008;
+  if (visible && moving && !equalizerFrame) {
     equalizerFrame = requestAnimationFrame(animateEqualizer);
-  } else {
-    equalizerTint = 0;
+  } else if ((!visible || !moving) && equalizerFrame) {
+    cancelAnimationFrame(equalizerFrame);
     equalizerFrame = 0;
-    drawEqualizer(false);
   }
+  if (visible && !moving) drawEqualizer(performance.now());
 }
 
 function stopEqualizer() {
   equalizerPlaying = false;
-  drawEqualizer(false);
+  syncEqualizerMotion();
 }
 
 function resizeArtwork() {
   dotSize = fitCanvas(dotWave, dotContext);
   drawDotWave();
   equalizerSize = fitCanvas(equalizer, equalizerContext);
-  drawEqualizer(equalizerPlaying);
+  drawEqualizer(performance.now());
 }
 
 loadSpectrum();
 resizeArtwork();
 syncDotMotion();
+syncEqualizerMotion();
 reducedMotion.addEventListener("change", syncDotMotion);
+reducedMotion.addEventListener("change", syncEqualizerMotion);
 window.addEventListener("resize", resizeArtwork);
+window.addEventListener("fregat:view", syncEqualizerMotion);
+document.addEventListener("visibilitychange", syncEqualizerMotion);
 audio.addEventListener("playing", () => {
   equalizerPlaying = true;
-  if (!equalizerFrame) equalizerFrame = requestAnimationFrame(animateEqualizer);
+  syncEqualizerMotion();
 });
 ["pause", "ended", "waiting", "emptied"].forEach(event => audio.addEventListener(event, stopEqualizer));
 
