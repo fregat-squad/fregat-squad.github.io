@@ -39,7 +39,7 @@
     window.dispatchEvent(new Event("fregat:view"));
   }
 
-  function leaderboard({ entry, board, status, action, key, game, minimum }) {
+  function leaderboard({ entry, board, status, action, game, minimum }) {
     const nickname = entry.querySelector("input");
     const submit = entry.querySelector("button");
     const compact = matchMedia("(max-width: 680px)");
@@ -47,26 +47,35 @@
     const scroll = table.parentElement;
     const empty = board.querySelector("p");
     const fullList = board.querySelector("[data-leaders-more]");
-    const importButton = board.querySelector("[data-leaders-import]");
     const feedback = board.querySelector("[data-leaders-feedback]");
     const local = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
     const server = document.body.dataset.leaderboardUrl;
     const endpoint = (local ? "/.netlify/functions/leaderboard" : server) + "?game=" + game;
     let pending = null;
     let leaders = [];
-    let saved = [];
+    let ticket = null;
+    let inputs = [];
     let expanded = false;
     let writing = false;
     let requestNumber = 0;
-    try {
-      const previous = JSON.parse(localStorage.getItem(key));
-      if (!localStorage.getItem(key + "-imported") && Array.isArray(previous)) {
-        saved = previous.filter(item => item && typeof item.name === "string" &&
-          item.name.trim() && item.name.length <= 20 && !/[\p{Cc}\p{Cf}]/u.test(item.name) &&
-          Number.isSafeInteger(item.score) && item.score >= minimum);
+    async function start(height = 560) {
+      ticket = null;
+      inputs = [];
+      try {
+        const result = await request({ action: "start", height });
+        if (typeof result.ticket !== "string") throw Error();
+        ticket = result.ticket;
+        return result.seed;
+      } catch {
+        feedback.textContent = "Игра офлайн. Эта попытка не попадёт в общий рейтинг.";
+        return crypto.getRandomValues(new Uint32Array(1))[0];
       }
-    } catch {}
-    importButton.hidden = saved.length === 0;
+    }
+    function record(input) {
+      if (!ticket) return;
+      if (inputs.length >= fregatRunRules.maxTicks) { ticket = null; inputs = []; return; }
+      inputs.push(input + 100);
+    }
 
     function render() {
       const rows = leaders.slice(0, expanded ? leaders.length : 10).map(({ name, score, imported }, index) => {
@@ -88,7 +97,7 @@
 
     async function request(body) {
       const response = await fetch(endpoint, body ? {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+        signal: AbortSignal.timeout(body.action === "start" ? 4500 : 20000), method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
       } : {});
       if (!response.ok) throw new Error("Leaderboard unavailable");
       return response.json();
@@ -109,7 +118,7 @@
     }
 
     function offer(score) {
-      pending = score >= minimum ? score : null;
+      pending = ticket && score >= minimum ? score : null;
       entry.reset();
       nickname.setCustomValidity("");
       entry.hidden = pending === null;
@@ -119,7 +128,7 @@
     async function publish(body) {
       writing = true;
       requestNumber++;
-      submit.disabled = importButton.disabled = true;
+      submit.disabled = true;
       try {
         const result = await request(body);
         leaders = result.leaders;
@@ -128,7 +137,7 @@
         return result;
       } finally {
         writing = false;
-        submit.disabled = importButton.disabled = false;
+        submit.disabled = false;
       }
     }
 
@@ -143,7 +152,9 @@
       }
       const score = pending;
       try {
-        const result = await publish({ name, score });
+        let bytes = "";
+        for (let i = 0; i < inputs.length; i += 8192) bytes += String.fromCharCode(...inputs.slice(i, i + 8192));
+        const result = await publish({ action: "finish", name, ticket, inputs: btoa(bytes) });
         if (pending !== score) return;
         status.textContent = result.changed ? "Результат в общей таблице." : "У этого ника уже есть такой же или лучший результат.";
       } catch {
@@ -162,19 +173,6 @@
       scroll.scrollTop = 0;
       refresh();
     });
-    importButton.addEventListener("click", async () => {
-      if (writing) return;
-      try {
-        while (saved.length) {
-          await publish({ imported: true, entries: saved.slice(0, 100) });
-          saved = saved.slice(100);
-        }
-        importButton.hidden = true;
-        try { localStorage.setItem(key + "-imported", "1"); } catch {}
-      } catch {
-        feedback.textContent = "Перенос не завершён. Попробуй ещё раз.";
-      }
-    });
     nickname.addEventListener("input", () => nickname.setCustomValidity(""));
     board.open = !compact.matches;
     compact.addEventListener("change", () => { board.open = !compact.matches; });
@@ -183,7 +181,7 @@
     window.addEventListener("focus", refresh);
     render();
     refresh();
-    return { offer, focus: () => nickname.focus({ preventScroll: true }), get pending() { return pending !== null; } };
+    return { start, record, offer, focus: () => nickname.focus({ preventScroll: true }), get pending() { return pending !== null; } };
   }
 
   window.fregatArcade = { leaderboard };

@@ -25,9 +25,7 @@
   const wingDetails = new Path2D("M11 4Q19 0 25-7M13 6Q19 4 23 1M14 8Q19 7 22 5");
 
   const gateWidth = 62;
-  const gateSpacing = 245;
-  const gravity = 930;
-  const lift = -315;
+  let simulation, flapNext = false, remainder = 0;
   let gates = [];
   let mode = "ready";
   let score = 0;
@@ -35,7 +33,7 @@
   let elapsed = 0;
   let lastTime = 0;
   let frameRequest = 0;
-  let gateNumber = 0;
+
 
   bestOutput.value = best;
   bottle.src = "media/steersman.png";
@@ -67,24 +65,9 @@
     canvas.width = Math.round(width * density);
     canvas.height = Math.round(height * density);
     field.width = width / height * field.height;
-    const previousX = pilot.x;
     pilot.x = clamp(field.width * .24, 52, 194);
-    const shift = pilot.x - previousX;
-    gates.forEach(gate => { gate.x += shift; });
     ctx.setTransform(canvas.width / field.width, 0, 0, canvas.height / field.height, 0, 0);
     draw();
-  }
-
-  function newGate(x, previousCenter) {
-    const number = gateNumber++;
-    const gap = Math.max(144, 201 - number * 2.1);
-    const center = number === 0 ? field.height * .48 :
-      clamp(previousCenter + (Math.random() - .5) * 146, gap / 2 + 51, field.height - gap / 2 - 51);
-    return { x, center, gap, moving: number >= 6 && number % 3 === 0, scored: false };
-  }
-
-  function gateCenter(gate) {
-    return gate.center + (gate.moving ? Math.sin(elapsed * 1.7) * 25 : 0);
   }
 
   function drawShield(x, y, height, topShield) {
@@ -158,10 +141,10 @@
   function draw() {
     ctx.clearRect(0, 0, field.width, field.height);
     for (const gate of gates) {
-      const center = gateCenter(gate);
+      const center = simulation.gateCenter(gate);
       const bottom = center + gate.gap / 2;
-      drawShield(gate.x, 0, center - gate.gap / 2, true);
-      drawShield(gate.x, bottom, field.height - bottom, false);
+      drawShield(gate.x + pilot.x, 0, center - gate.gap / 2, true);
+      drawShield(gate.x + pilot.x, bottom, field.height - bottom, false);
     }
     drawPilot();
   }
@@ -190,65 +173,40 @@
     if (eligible) leaderboard.focus();
   }
 
-  function update(dt) {
-    elapsed += dt;
-    pilot.speed += gravity * dt;
-    pilot.y += pilot.speed * dt;
-    const halfHeight = 18;
-    if (pilot.y + halfHeight >= field.height || pilot.y - halfHeight <= 0) {
-      pilot.y = clamp(pilot.y, halfHeight, field.height - halfHeight);
-      finish();
-      return;
-    }
-
-    const distance = Math.min(293, 170 + score * 4.5) * dt;
-    for (const gate of gates) {
-      gate.x -= distance;
-      const center = gateCenter(gate);
-      if (pilot.x + 10 > gate.x && pilot.x - 10 < gate.x + gateWidth &&
-          (pilot.y - halfHeight < center - gate.gap / 2 || pilot.y + halfHeight > center + gate.gap / 2)) {
-        finish();
-        return;
-      }
-      if (!gate.scored && gate.x + gateWidth < pilot.x - 10) {
-        gate.scored = true;
-        scoreOutput.value = ++score;
-        if (score > best) {
-          bestOutput.value = best = score;
-          saveRecord();
-        }
-      }
-    }
-    const tail = gates.at(-1);
-    if (tail.x < field.width - gateSpacing + gateWidth) gates.push(newGate(tail.x + gateSpacing, tail.center));
-    gates = gates.filter(gate => gate.x + gateWidth > 0);
-  }
-
   function frame(time) {
-    const dt = lastTime ? Math.min(.032, (time - lastTime) / 1000) : 0;
+    remainder += lastTime ? Math.min(.05, (time - lastTime) / 1000) : 0;
     lastTime = time;
-    update(dt);
+    while (remainder >= fregatRunRules.tick && !simulation.over) {
+      leaderboard.record(+flapNext);
+      simulation.step(flapNext);
+      flapNext = false;
+      remainder -= fregatRunRules.tick;
+    }
+    Object.assign(pilot, simulation.pilot);
+    gates = simulation.gates;
+    elapsed = simulation.elapsed;
+    scoreOutput.value = score = simulation.score;
+    if (score > best) { bestOutput.value = best = score; saveRecord(); }
     draw();
-    if (mode === "playing") frameRequest = requestAnimationFrame(frame);
+    if (simulation.over) finish();
+    else frameRequest = requestAnimationFrame(frame);
   }
 
-  function flap() {
-    pilot.speed = lift;
-    pilot.flapAt = elapsed;
-  }
+  function flap() { flapNext = true; }
 
-  function play() {
+  async function play() {
+    if (mode === "starting" || mode === "playing") return;
     if (mode !== "paused") {
+      mode = "starting";
       leaderboard.offer(0);
-      elapsed = 0;
-      score = 0;
-      scoreOutput.value = 0;
-      gateNumber = 0;
-      pilot.y = field.height * .43;
-      gates = [newGate(Math.min(field.width + 15, pilot.x + 272), pilot.y)];
-      flap();
+      const seed = await leaderboard.start();
+      simulation = fregatRunRules.flight(seed);
+      scoreOutput.value = score = 0;
+      flapNext = false;
+      remainder = 0;
     }
     mode = "playing";
+    if (flight.hidden || document.hidden) { pauseGame(false); return; }
     overlay.hidden = true;
     pause.hidden = false;
     flight.focus({ preventScroll: true });

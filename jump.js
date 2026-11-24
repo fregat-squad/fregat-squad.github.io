@@ -30,10 +30,8 @@
   let mode = "ready";
   let camera = 0;
   let platforms = [];
-  let nextRow = 1;
+  let simulation, remainder = 0;
   let best = readBest();
-  let peak = 0;
-  let bonuses = 0;
   let score = 0;
   let elapsed = 0;
   let fuel = 0;
@@ -69,57 +67,25 @@
     canvas.width = Math.round(width * density);
     canvas.height = Math.round(height * density);
     field.height = field.width * height / width;
-    if (mode === "ready") camera = 66 - field.height;
     ctx.setTransform(canvas.width / field.width, 0, 0, canvas.height / field.height, 0, 0);
-    fillField();
+    if (mode === "ready") resetRun();
     draw();
   }
 
-  function resetRun() {
-    const start = { x: field.width / 2, y: 0, width: 114, travel: 0, item: "" };
-    platforms = [start];
-    nextRow = 1;
-    player.x = start.x;
-    player.y = start.y;
-    player.vx = 0;
-    player.vy = -540;
-    player.facing = 1;
-    elapsed = 0;
-    peak = 0;
-    bonuses = 0;
-    score = 0;
-    fuel = 0;
-    camera = 66 - field.height;
-    scoreOutput.value = 0;
-    fillField();
+  function resetRun(seed = 1, height = Math.round(field.height)) {
+    simulation = fregatRunRules.jump(seed, height);
+    remainder = 0;
+    syncSimulation();
   }
-
-  function fillField() {
-    while (platforms.at(-1).y > camera - 170) {
-      const last = platforms.at(-1);
-      const row = nextRow++;
-      const difficulty = clamp((row - 3) / 27, 0, 1);
-      const cactusPeriod = difficulty >= .52 ? 4 : 5;
-      const item = row % 13 === 0 ? "rocket"
-        : row % 6 === 0 ? "spring"
-        : row > 4 && row % cactusPeriod === 0 ? "cactus"
-        : row >= 13 && row % 5 === 2 ? "fragile" : "";
-      const moving = !item && (difficulty >= .56 ? row % 2 === 1 : row >= 6 && row % 4 === 0);
-      const travel = moving ? 15 + difficulty * 16 : 0;
-      const width = Math.max(item === "cactus" ? 78 : 52, 100 - difficulty * 48);
-      const margin = width / 2 + travel + 12;
-      // Leave room for both platforms' travel within the distance of a normal jump.
-      const reach = 84 + difficulty * 32 - last.travel - travel;
-      const x = clamp(last.x + (Math.random() * 2 - 1) * reach, margin, field.width - margin);
-      const y = last.y - (70 + difficulty * 19 + Math.random() * (19 + difficulty * 6));
-      platforms.push({ x, y, width, item, travel, speed: 1.8 + difficulty * 1.8, phase: Math.random() * Math.PI * 2,
-        cactusSide: x >= last.x ? 1 : -1 });
-    }
+  function syncSimulation() {
+    Object.assign(player, simulation.player);
+    camera = simulation.camera;
+    platforms = simulation.platforms;
+    fuel = simulation.fuel;
+    elapsed = simulation.elapsed;
+    scoreOutput.value = score = simulation.score;
   }
-
-  function xOf(platform) {
-    return platform.x + (platform.travel ? Math.sin(elapsed * platform.speed + platform.phase) * platform.travel : 0);
-  }
+  function xOf(platform) { return simulation.xOf(platform); }
 
   function distanceAcrossField(a, b) {
     const distance = Math.abs(a - b);
@@ -266,75 +232,32 @@
     return touchDirection || Number(right) - Number(left);
   }
 
-  function update(dt) {
-    elapsed += dt;
-    const direction = readDirection();
-    if (direction) player.facing = Math.sign(direction);
-    player.vx += (direction * 220 - player.vx) * Math.min(1, dt * 15);
-    player.x = (player.x + player.vx * dt + field.width) % field.width;
-    const wasY = player.y;
-    fuel = Math.max(0, fuel - dt);
-    player.vy = fuel > 0 ? -485 : player.vy + 1110 * dt;
-    player.y += player.vy * dt;
-
-    for (const platform of platforms) {
-      if (platform.spentAt !== undefined) continue;
-      const x = xOf(platform);
-      const distance = distanceAcrossField(player.x, x);
-      if (platform.item === "cactus" && fuel === 0 &&
-          distanceAcrossField(player.x, x + platform.cactusSide * (platform.width / 2 - 13)) < 22 &&
-          player.y > platform.y - 34 && player.y - 40 < platform.y) {
-        end("Кактус!");
-        return;
-      }
-      if (platform.item === "rocket" && distance < 25 &&
-          player.y > platform.y - 55 && player.y - 46 < platform.y - 11) {
-        platform.item = "";
-        fuel = 1.35;
-        bonuses += 50;
-        player.vy = -485;
-      }
-      if (player.vy <= 0 || distance > platform.width / 2 + 9) continue;
-      const useSpring = platform.item === "spring" && distance < 27;
-      const landing = platform.y - (useSpring ? 12 : 0);
-      if (wasY <= landing && player.y >= landing) {
-        player.y = landing;
-        player.vy = useSpring ? -782 : -540;
-        if (platform.item === "fragile") platform.spentAt = elapsed;
-        if (useSpring) {
-          platform.item = "";
-          bonuses += 25;
-        }
-        break;
-      }
-    }
-
-    peak = Math.max(peak, -player.y);
-    const nextScore = Math.floor(peak / 10) + bonuses;
-    if (nextScore !== score) scoreOutput.value = score = nextScore;
-    camera = Math.min(camera, player.y - field.height * .46);
-    fillField();
-    platforms = platforms.filter(platform => platform.y < camera + field.height + 100 &&
-      (platform.spentAt === undefined || elapsed - platform.spentAt < .23));
-    if (player.y > camera + field.height + 48) end("Прыжок окончен");
-  }
-
   function frame(time) {
-    update(then ? Math.min(.035, (time - then) / 1000) : 0);
-    if (mode === "playing") {
-      then = time;
-      frameId = requestAnimationFrame(frame);
+    remainder += then ? Math.min(.05, (time - then) / 1000) : 0;
+    then = time;
+    while (remainder >= fregatRunRules.tick && !simulation.over) {
+      const direction = Math.round(readDirection() * 100);
+      board.record(direction);
+      simulation.step(direction);
+      remainder -= fregatRunRules.tick;
     }
+    syncSimulation();
     draw();
+    if (simulation.over) end(simulation.over);
+    else frameId = requestAnimationFrame(frame);
   }
 
-  function play() {
-    if (mode === "playing") return;
+  async function play() {
+    if (mode === "playing" || mode === "starting") return;
     if (mode !== "paused") {
+      mode = "starting";
       board.offer(0);
-      resetRun();
+      const height = clamp(Math.round(field.height), 200, 1600);
+      const seed = await board.start(height);
+      resetRun(seed, height);
     }
     mode = "playing";
+    if (stage.hidden || document.hidden) { suspend(false); return; }
     overlay.hidden = true;
     pause.hidden = false;
     stick.hidden = false;
