@@ -41,8 +41,27 @@
 .wanted-paper i:nth-child(2) { top: 79.8%; height: 13.4%; background-size: 100% 746%; background-position: center 58%; }
 .wanted-paper i:last-child { bottom: 0; height: 7%; background-size: 100% 1429%; background-position: bottom; }
 .pasted-photo { position: absolute; inset: 26% 13% 22%; padding: 1.3%; background: #ede2c8; rotate: -1.5deg; box-shadow: 1px 2px 3px #3b1c0e88; }
-.pasted-photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 36%; }
-.poster-name { position: absolute; left: 0; bottom: 0; padding: .2em .5em; color: #30291d; background: #efe8d5; font: bold 6.6cqw/1.05 Consolas,monospace; }
+.poster-crop {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: center / cover no-repeat;
+  background-size: var(--portrait-width, cover);
+  background-position: var(--portrait-position, center);
+}
+.poster-crop[data-member="sevych"]    { --portrait-position: 50% 45%; }
+.poster-crop[data-member="kishiomi"]  { --portrait-width: 220%; --portrait-position: 0% 48%; filter: brightness(1.2); }
+.poster-crop[data-member="vlados"]    { --portrait-position: 50% 14%; }
+.poster-crop[data-member="shurik"]    { --portrait-width: 155%; --portrait-position: 41% 3%; }
+.poster-crop[data-member="echo"]      { --portrait-width: 226%; --portrait-position: 45% 20%; }
+.poster-crop[data-member="asel"]      { --portrait-width: 225%; --portrait-position: 86% 17%; }
+.poster-crop[data-member="fotograf"]  { --portrait-width: 150%; --portrait-position: 64% 19%; filter: brightness(1.15); }
+.poster-crop[data-member="pumba"]     { --portrait-position: 50% 86%; }
+.poster-crop[data-member="leha"]      { --portrait-width: 295%; --portrait-position: 48% 11%; }
+.poster-crop[data-member="kiryundel"] { --portrait-width: 132%; --portrait-position: 50% 12%; }
+.poster-crop[data-member="vzuril"]    { --portrait-width: 223%; --portrait-position: 50% 47%; }
+.poster-crop[data-member="vzhe"]      { --portrait-width: 183%; --portrait-position: 44% 34%; }
+.poster-crop[data-member="boss"]      { --portrait-position: 50% 100%; }
 .poster-reward { position: absolute; inset: 80% 8% 6.5%; display: grid; place-content: center; border-block: 1px solid #62401b;
   white-space: nowrap; color: #39220f; font: bold 10.4cqw/1 Georgia,serif; letter-spacing: -.055em; }
 @media (hover:hover) { .wanted-poster:hover { scale: 1.09; rotate: 0deg; filter: drop-shadow(2px 7px 5px #0c150fb3); } }

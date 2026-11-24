@@ -87,6 +87,7 @@ async function rotateDeck() {
     if (depth === 0) card.removeAttribute("aria-hidden");
     else card.setAttribute("aria-hidden", "true");
   });
+  syncDeckVideo();
   outgoing.getAnimations().forEach(animation => animation.cancel());
   if (!reducedMotion.matches) {
     outgoing.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 175 });
@@ -95,8 +96,19 @@ async function rotateDeck() {
 }
 
 const deckHome = deck.closest(".hero");
+const deckVideo = deck.querySelector("video");
+
+function syncDeckVideo() {
+  if (!reducedMotion.matches && !document.hidden && !deckHome.hidden && cards[0].contains(deckVideo)) {
+    deckVideo.play().catch(() => {});
+  } else {
+    deckVideo.pause();
+  }
+}
+
 let deckTimer;
 function scheduleDeck() {
+  syncDeckVideo();
   clearTimeout(deckTimer);
   if (!reducedMotion.matches && !document.hidden && !deckHome.hidden) {
     deckTimer = setTimeout(advanceDeck, 2750);

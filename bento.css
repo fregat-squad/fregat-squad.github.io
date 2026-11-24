@@ -71,7 +71,7 @@ body, body.arcade { background: var(--paper); color: var(--coal); }
 .home-games h2 { margin: 0; font-size: clamp(23px, 2.1vw, 34px); line-height: 1; letter-spacing: -.065em; }
 .deck { aspect-ratio: 4 / 5.15; }
 .card { border: 0; border-radius: 14px; padding: 0; background: #2c3533; box-shadow: 0 5px 14px #172c2740; }
-.card img { border-radius: inherit; }
+.card :is(img, video) { border-radius: inherit; }
 
 .player, .arcade .player { margin: 12px 0 0; padding: 13px 22px; border-radius: var(--tile-radius); }
 .player { color: #f2fff9; }

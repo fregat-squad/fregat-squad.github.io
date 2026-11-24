@@ -93,7 +93,10 @@
     texture.setAttribute("aria-hidden", "true");
     texture.append(element("i"), element("i"), element("i"));
     const frame = element("span", "pasted-photo");
-    frame.append(picture(portraitsFor(member)[0].src, "", ""), element("span", "poster-name", member.posterName || (member.reserved ? member.code : member.name)));
+    const crop = element("span", "poster-crop");
+    crop.style.backgroundImage = 'url("' + portraitsFor(member)[0].src + '")';
+    crop.dataset.member = member.id;
+    frame.append(crop);
     a.append(texture, frame, element("span", "poster-reward", "$" + amount.format(member.reward)));
     a.addEventListener("click", event => {
       if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
@@ -121,7 +124,7 @@
     if (chief) {
       const slot = element("div", "chief-slot");
       slot.append(poster(chief, 2));
-      centre.append(slot, element("strong", "chief-label", chief.name));
+      centre.append(slot, element("strong", "chief-label", chief.role));
     }
     desk.append(left, centre, right);
   }
@@ -142,7 +145,7 @@
     name.id = "member-file-name";
     text.append(element("small", "file-kicker", "Личное досье"), name);
     const fields = element("dl", "file-fields");
-    for (const [label, value] of [["Роль", member.role || "Участник сквада"], ["Награда", "$" + amount.format(member.reward)]]) {
+    for (const [label, value] of [["Возраст", member.age + " лет"], ["Роль", member.role], ["Награда", "$" + amount.format(member.reward)]]) {
       fields.append(element("dt", "", label), element("dd", "", value));
     }
     text.append(fields);
