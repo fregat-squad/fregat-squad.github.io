@@ -156,6 +156,26 @@ function playImpact(){
 }
 function volumeTarget(){return muted?0:Number($('volume').value)/100}
 function updateVolume(){if(master)master.gain.setTargetAtTime(volumeTarget(),audio.currentTime,.09)}
+let stepDistance=0,footstepBuffer;
+function footstep(){
+ if(!audio||audio.state!=='running'||muted||volumeTarget()===0)return;
+ if(!footstepBuffer){
+   const rate=audio.sampleRate,random=seeded(1701);
+   footstepBuffer=audio.createBuffer(1,Math.ceil(rate*.14),rate);
+   const samples=footstepBuffer.getChannelData(0);
+   let grit=0;
+   for(let i=0;i<samples.length;i++){
+     const t=i/rate;
+     grit=.76*grit+.24*(random()*2-1);
+     const sole=.065*Math.sin(2*Math.PI*(92*t-125*t*t))*Math.exp(-42*t);
+     const gravel=.13*grit*Math.exp(-27*t);
+     samples[i]=(sole+gravel)*Math.min(1,t/.007,(.14-t)/.012);
+   }
+ }
+ const step=audio.createBufferSource();step.buffer=footstepBuffer;
+ step.playbackRate.value=.91+Math.random()*.16;step.connect(master);
+ step.onended=()=>step.disconnect();step.start()
+}
 function tone(freq,len,type='sine',volume=.055){
  if(!audio||muted)return;const o=audio.createOscillator(),v=audio.createGain();o.type=type;o.frequency.value=freq;o.connect(v);v.connect(master);
  v.gain.setValueAtTime(.0001,audio.currentTime);v.gain.exponentialRampToValueAtTime(volume,audio.currentTime+.014);v.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+len);o.start();o.stop(audio.currentTime+len)
@@ -224,7 +244,7 @@ document.addEventListener('pointermove',e=>{
 });
 function play(fresh){
  if(fresh){if(impactSource)impactSource.stop();createLevel();chorusOffset=0;counter();hint('Слышишь припев? Лёха рядом. Слушай, с какой стороны он едет.',5)}
- phase='play';keys.clear();captureMouse();$('modal').hidden=$('menu').hidden=true;$('hud').hidden=false;
+ phase='play';stepDistance=.55;keys.clear();captureMouse();$('modal').hidden=$('menu').hidden=true;$('hud').hidden=false;
  screenBox.classList.remove('ending','dead');screenBox.classList.add('live');
  $('status').textContent=total===7?'ПОСЛЕДНЯЯ ПОГОНЯ':'В ЛАБИРИНТЕ';awaken()
 }
@@ -232,7 +252,12 @@ function stop(kind){if(phase!=='play'&&!(phase==='dying'&&kind==='lost'))return;
  if(kind==='won'){endingStart=performance.now();screenBox.classList.add('ending');tone(440,.58,'sine',.04);tone(659,.75,'sine',.028)}
  const info={pause:['Пауза','Лабиринт подождёт.','Продолжить'],lost:['Ты погиб','Лёха догнал тебя. Собрано стирсманов — '+total+' из 7.','Попробовать снова'],won:['За закрытой дверью','Ты задвигаешь щеколду. Семь бутылок звякают на стойке. За стеклом Лёха ещё раз проезжает мимо.','Сыграть ещё']}[kind];$('modalTitle').textContent=info[0];$('modalText').textContent=info[1];$('resume').textContent=info[2];$('status').textContent=info[0].toUpperCase();$('resume').focus()}
 function advance(dt){elapsed+=dt;let turn=Number(keys.has('ArrowRight'))-Number(keys.has('ArrowLeft'));heading+=turn*dt*2.925+Math.max(-.23,Math.min(.23,mouseDelta*mouseSensitivity));mouseDelta=0;let f=Number(keys.has('KeyW')||keys.has('ArrowUp'))-Number(keys.has('KeyS')||keys.has('ArrowDown')),s=Number(keys.has('KeyD'))-Number(keys.has('KeyA')),dx=Math.cos(heading),dy=Math.sin(heading),speed=(keys.has('ShiftLeft')||keys.has('ShiftRight')?3.25:2.18)*dt/(Math.hypot(f,s)||1);
- const ax=(dx*f-dy*s)*speed,ay=(dy*f+dx*s)*speed,r=.17;if(open(player.x+ax+Math.sign(ax)*r,player.y-r)&&open(player.x+ax+Math.sign(ax)*r,player.y+r))player.x+=ax;if(open(player.x-r,player.y+ay+Math.sign(ay)*r)&&open(player.x+r,player.y+ay+Math.sign(ay)*r))player.y+=ay;if(f||s)walk+=dt*9;
+ const oldX=player.x,oldY=player.y;
+ const ax=(dx*f-dy*s)*speed,ay=(dy*f+dx*s)*speed,r=.17;if(open(player.x+ax+Math.sign(ax)*r,player.y-r)&&open(player.x+ax+Math.sign(ax)*r,player.y+r))player.x+=ax;if(open(player.x-r,player.y+ay+Math.sign(ay)*r)&&open(player.x+r,player.y+ay+Math.sign(ay)*r))player.y+=ay;const travelled=Math.hypot(player.x-oldX,player.y-oldY);
+ if(travelled>0){
+   walk+=dt*9;stepDistance+=travelled;
+   if(stepDistance>=1){stepDistance%=1;footstep()}
+ }
  for(const item of items)if(!item.got&&dist(player,item)<.56){
    item.got=true;total++;counter();
    if(total===7){startFinalChase();tone(86,.55,'triangle',.048);hint('7 / 7 · Дверь открыта. Беги во «Фрегат»!',4)}
