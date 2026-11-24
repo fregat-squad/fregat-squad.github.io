@@ -8,9 +8,23 @@
   function showView() {
     const fragment = location.hash.slice(1);
     const route = fragment.startsWith("dossiers/") ? "dossiers" : fragment;
+    const mazeOpen = route === "night-maze";
     const next = views.find(view => view.dataset.gameView === route) ?? null;
     if (next === active) return;
     active = next;
+    const mazeView = document.querySelector(".maze-view");
+    document.body.classList.toggle("in-maze", mazeOpen);
+    document.body.classList.remove("maze-expanded");
+    if (mazeOpen) {
+      document.querySelector("#play[data-playing]")?.click();
+      const frame = document.createElement("iframe");
+      frame.title = "Ночной лабиринт";
+      frame.allowFullscreen = true;
+      frame.src = "games/night-maze/index.html";
+      mazeView.replaceChildren(frame);
+    } else {
+      mazeView.replaceChildren();
+    }
     for (const view of views) view.hidden = view !== active;
     for (const link of links) {
       if (active && link.hash === location.hash) link.setAttribute("aria-current", "page");
