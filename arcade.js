@@ -18,7 +18,7 @@
     if (mazeOpen) {
       document.querySelector("#play[data-playing]")?.click();
       const frame = document.createElement("iframe");
-      frame.title = "Ночной лабиринт";
+      frame.title = "Побег от Лёхи";
       frame.allowFullscreen = true;
       frame.src = "games/night-maze/index.html";
       mazeView.replaceChildren(frame);
